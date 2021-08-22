@@ -5,7 +5,7 @@
 #include "Components/CStatusComponent.h"
 #include "Components/CActionComponent.h"
 #include "Character/CPlayer.h"
-//#include "Objects/CObject_Throw.h"
+#include "Objects/CObject_Throw.h"
 
 void ACDoAction_Throw::DoAction()
 {
@@ -21,24 +21,24 @@ void ACDoAction_Throw::DoAction()
 void ACDoAction_Throw::Begin_DoAction()
 {
 	//Get Throw Object from player
-	//ACObject_Throw* Throw = nullptr;
-	//for (AActor* actor : OwnerCharacter->Children)
-	//{
-	//	Throw = Cast<ACObject_Throw>(actor);
-	//	if(!!Throw) break;
-	//}  
-	//
-	//CheckNull(Throw);
-	//Throw->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
-	//if (Throw->OnObjectThrown.IsBound())
-	//	Throw->OnObjectThrown.Broadcast();
+	ACObject_Throw* Throw = nullptr;
+	for (AActor* actor : OwnerCharacter->Children)
+	{
+		Throw = Cast<ACObject_Throw>(actor);
+		if(!!Throw) break;
+	}  
+	
+	CheckNull(Throw);
+	Throw->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
+	if (Throw->OnObjectThrown.IsBound())
+		Throw->OnObjectThrown.Broadcast();
 }
 
 void ACDoAction_Throw::End_DoAction()
 {
 	//End Action -> Set Idle, Set Move
-	//State->SetIdleMode();
-	//UCActionComponent* action = CHelpers::GetComponent<UCActionComponent>(OwnerCharacter);
-	//CheckNull(action);
-	//action->SetSwordMode();
+	State->SetIdleMode();
+	UCActionComponent* action = CHelpers::GetComponent<UCActionComponent>(OwnerCharacter);
+	CheckNull(action);
+	action->SetSwordMode();
 }

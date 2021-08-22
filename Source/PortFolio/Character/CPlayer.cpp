@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "CPlayer.h"
 #include "Global.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -14,19 +11,11 @@
 #include "Components/CActionComponent.h"
 #include "Components/CMontageComponent.h"
 #include "Components/CSplineComponent.h"
-//#include "Objects/CObject.h"
+#include "Objects/CObject.h"
 #include "Widgets/CUserWidget_Health.h"
 
-
-
-#include "Engine/Canvas.h"
-
-
-
-// Sets default values
 ACPlayer::ACPlayer()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	//Create SceneComponent
@@ -37,14 +26,13 @@ ACPlayer::ACPlayer()
 	}
 	
 	//Create ActorComponent
-	
-	CHelpers::CreateActorComponent(this, &Status, "Status");
-	CHelpers::CreateActorComponent(this, &State, "State");
-	CHelpers::CreateActorComponent(this, &Action, "Action");
-	CHelpers::CreateActorComponent(this, &Montage, "Montage");
-	CHelpers::CreateActorComponent(this, &Spline, "Spline");
-
-	
+	{
+		CHelpers::CreateActorComponent(this, &Status, "Status");
+		CHelpers::CreateActorComponent(this, &State, "State");
+		CHelpers::CreateActorComponent(this, &Action, "Action");
+		CHelpers::CreateActorComponent(this, &Montage, "Montage");
+		CHelpers::CreateActorComponent(this, &Spline, "Spline");
+	}
 
 	//Mesh Setting
 	{
@@ -67,8 +55,6 @@ ACPlayer::ACPlayer()
 			GetMesh()->SetAnimClass(animClass);
 		}
 	}
-	
-	
 
 	//CapsuleComponent Setting
 	{
@@ -81,7 +67,6 @@ ACPlayer::ACPlayer()
 		bUseControllerRotationYaw = false;
 		bUseControllerRotationRoll = false;
 	}
-	
 
 	//CharacterMovement Setting
 	{
@@ -151,29 +136,31 @@ void ACPlayer::Tick(float DeltaTime)
 			MoveToDestination();
 		}
 	}
+
 	//Draw Boomerang Route
 	else if (Action->IsBoomerangMode())
 	{
 		if (bClicked)
 		{
+			//TODO : 라인 그리기
 			FVector pointLocation = FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, GetActorLocation().Z);
 			Spline->UpdateSplineRoute(pointLocation);
 		}
 	}
 
 	//Interact With Object
-	//if (bOverleppedObject)
-	//{
-	//	if (OverlappedActors.Contains(HitResult.Actor))
-	//	{
-	//		if (!!Cast<ACObject>(HitResult.Actor) && ClickTime == 0.0f)
-	//		{
-	//			ACObject* object = Cast<ACObject>(HitResult.Actor);
-	//			if (object->OnInteract.IsBound())
-	//				object->OnInteract.Broadcast(this);
-	//		}
-	//	}
-	//}
+	if (bOverleppedObject)
+	{
+		if (OverlappedActors.Contains(HitResult.Actor))
+		{
+			if (!!Cast<ACObject>(HitResult.Actor) && ClickTime == 0.0f)
+			{
+				ACObject* object = Cast<ACObject>(HitResult.Actor);
+				if (object->OnObjectInteract.IsBound())
+					object->OnObjectInteract.Broadcast(this);
+			}
+		}
+	}
 	
 	
 	//Throwing Object
@@ -215,7 +202,6 @@ void ACPlayer::OnAction()
 	}
 	else
 	{
-		//TODO : 라인 그리기
 		bClicked = true;
 	}
 	
@@ -254,15 +240,15 @@ void ACPlayer::OnChangeWeapon()
 
 void ACPlayer::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//CheckNull(Cast<ACObject>(OtherActor));
-	//CheckFalse((Action->IsUnarmedMode() || Action->IsSwordMode()));					//지금 내 상태를 체크
-	//CheckFalse(State->IsIdleMode());												//피격이 아닌지 체크
-	//CheckTrue(OtherActor != HitResult.Actor);										//충돌한 대상이 내가 상호작용하고자 하는 대상인가
-	//ACObject* object = Cast<ACObject>(HitResult.Actor);								
-	//CheckNull(object);																//내가 가리킨 대상이 오브젝트인가
-	//UGameplayStatics::GetPlayerController(GetWorld(), 0)->StopMovement();
-	//OverlappedActors.Add(OtherActor);
-	//bOverleppedObject = true;
+	CheckNull(Cast<ACObject>(OtherActor));
+	CheckFalse((Action->IsUnarmedMode() || Action->IsSwordMode()));					//지금 내 상태를 체크
+	CheckFalse(State->IsIdleMode());												//피격이 아닌지 체크
+	CheckTrue(OtherActor != HitResult.Actor);										//충돌한 대상이 내가 상호작용하고자 하는 대상인가
+	ACObject* object = Cast<ACObject>(HitResult.Actor);								
+	CheckNull(object);																//내가 가리킨 대상이 오브젝트인가
+	UGameplayStatics::GetPlayerController(GetWorld(), 0)->StopMovement();
+	OverlappedActors.Add(OtherActor);
+	bOverleppedObject = true;
 }
 
 void ACPlayer::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)

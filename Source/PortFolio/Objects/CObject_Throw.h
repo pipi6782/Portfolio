@@ -10,22 +10,21 @@ UCLASS()
 class PORTFOLIO_API ACObject_Throw : public ACObject
 {
 	GENERATED_BODY()
-	
-private:
+
+protected:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UDestructibleComponent* Destructible;
 
+	//캐릭터와 오브젝트가 상호작용할 수 있는지 여부를 판단
 	UPROPERTY(VisibleDefaultsOnly)
-		class USphereComponent* Sphere;
+		class UBoxComponent* Box;
 
-protected:
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
+	UPROPERTY(VisibleDefaultsOnly)
 		class UProjectileMovementComponent* Projectile;
 
 public:
 	ACObject_Throw();
 
-	virtual void Tick(float DeltaSeconds) override;
 protected:
 	virtual void BeginPlay() override;
 
@@ -33,6 +32,9 @@ protected:
 
 	UFUNCTION()
 		void OnThrown();
+
+	UFUNCTION()
+		void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public:
 	FObjectThrown OnObjectThrown;

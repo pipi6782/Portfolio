@@ -1,6 +1,7 @@
 #include "CDoAction_Boomerang.h"
 #include "Global.h"
 #include "GameFramework/Character.h"
+
 #include "Components/SplineComponent.h"
 #include "Components/CStateComponent.h"
 #include "Components/CStatusComponent.h"
@@ -9,7 +10,6 @@
 #include "CAttachment.h"
 #include "CEquipment.h"
 #include "CSplinePath.h"
-
 
 ACDoAction_Boomerang::ACDoAction_Boomerang()
 {
@@ -51,7 +51,6 @@ void ACDoAction_Boomerang::DoAction()
 	{
 		OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
 	}
-
 }
 
 void ACDoAction_Boomerang::Begin_DoAction()
@@ -61,6 +60,7 @@ void ACDoAction_Boomerang::Begin_DoAction()
 	boomerang->SetActorLocation(OwnerCharacter->GetActorLocation());
 	float length = Spline->GetPath()->GetSpline()->GetSplineLength();
 	boomerang->SetActorRotation(FRotator(90, 0, 0));
+	boomerang->OnCollision();
 	Timeline.SetPlayRate(1000 / length);
 	Timeline.PlayFromStart();
 }
@@ -85,7 +85,6 @@ void ACDoAction_Boomerang::OnBoomerangEnd()
 {
 	//캐릭터에게 돌아가는 타이머 실행
 	UKismetSystemLibrary::K2_SetTimer(this, "ReturnToPlayer", timer, true);
-	
 }
 
 void ACDoAction_Boomerang::OnBoomerangThrowing(float Output)
@@ -121,6 +120,7 @@ void ACDoAction_Boomerang::ReturnToPlayer()
 	{
 		boomerang->OnUnequip();
 		Spline->Reset();
+		boomerang->OffCollision();
 		UKismetSystemLibrary::K2_ClearTimer(this, "ReturnToPlayer");
 	}
 }

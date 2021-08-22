@@ -29,5 +29,7 @@ public:
 	FObjectInteract OnObjectInteract;
 
 protected:
-	class ACharacter* InteractedCharacter;
+	class ACPlayer* InteractedCharacter;
+
+	bool bInteracted = false;
 };
