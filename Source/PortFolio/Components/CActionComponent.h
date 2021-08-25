@@ -10,7 +10,7 @@ UENUM(BlueprintType)
 enum class EActionType : uint8 //어떤 무기를 장착하고있는가
 {
 	Unarmed,	//칼을 획득하지 않았을때
-	Sword,		//검을 획득한 이후 쭉(maybe
+	Sword,		//검을 획득한 이후 쭉(maybe)
 	Throwing,	//던질수 있는 오브젝트를 들고 있을 때
 	Boomerang,	//부메랑 사용중 취하는 액션
 	Max

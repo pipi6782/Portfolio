@@ -1,27 +1,24 @@
 #include "CDrawLine.h"
 #include "Global.h"
-#include "Engine/Canvas.h"
+#include "Components/SplineComponent.h"
 
 ACDrawLine::ACDrawLine()
 {
+	CHelpers::CreateComponent(this, &Scene, "Scene");
+	CHelpers::CreateComponent(this, &Spline, "Spline",Scene);
 
+	Scene->SetMobility(EComponentMobility::Static);
 }
 
+void ACDrawLine::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	CLog::Print(Spline->GetNumberOfSplinePoints(), 1);
+}
+
+// Called when the game starts or when spawned
 void ACDrawLine::BeginPlay()
 {
 	Super::BeginPlay();
-	
-
-	//RenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(GetWorld());
-}
-
-void ACDrawLine::Draw()
-{
-	//UKismetRenderingLibrary::ClearRenderTarget2D(GetWorld(), RenderTarget);
-	//UCanvas* canvas = GetWorld()->GetCanvasForDrawMaterialToRenderTarget();
-	//
-	//FDrawToRenderTargetContext context;
-	//context.RenderTarget = RenderTarget;
-	//
-	//UKismetRenderingLibrary::BeginDrawCanvasToRenderTarget(GetWorld(), RenderTarget, canvas, FVector2D(canvas->SizeX, canvas->SizeY), context);
+	Spline->ClearSplinePoints();
 }

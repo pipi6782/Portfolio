@@ -13,7 +13,7 @@ void UCDrawRouteComponent::BeginPlay()
 	Super::BeginPlay();
 	TArray<AActor*> actors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDrawLine::StaticClass(), actors);
-
+	
 	for (AActor* actor : actors)
 	{
 		Draw = Cast<ACDrawLine>(actor);
@@ -21,7 +21,7 @@ void UCDrawRouteComponent::BeginPlay()
 	}
 }
 
-void UCDrawRouteComponent::DrawLine()
+void UCDrawRouteComponent::DrawLine(const FVector& InLocation)
 {
-	Draw->Draw();
+	Draw->Draw(InLocation);
 }

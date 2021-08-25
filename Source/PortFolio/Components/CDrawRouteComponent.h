@@ -24,6 +24,5 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	void DrawLine();
-		
+	void DrawLine(const FVector& InLocation);
 };

@@ -19,3 +19,8 @@ void ACObject::BeginPlay()
 {
 	Super::BeginPlay();
 }
+
+float ACObject::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+}

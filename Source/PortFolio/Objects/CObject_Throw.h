@@ -25,6 +25,9 @@ protected:
 public:
 	ACObject_Throw();
 
+	virtual void Tick(float DeltaSeconds) override;
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 protected:
 	virtual void BeginPlay() override;
 
@@ -34,8 +37,17 @@ protected:
 		void OnThrown();
 
 	UFUNCTION()
-		void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+		void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION()
+		void DetachActor();
 
 public:
+	//Purpose : 오브젝트를 던질때 실행할 함수들을 바인딩
+	// Call : ACDoAction_Throw::Begin_DoAction 호출시
+	//Bind : DetachActor, OnThrown
 	FObjectThrown OnObjectThrown;
+
+private:
+	bool bDamaged = false;
 };

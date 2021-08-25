@@ -29,7 +29,6 @@ void ACDoAction_Throw::Begin_DoAction()
 	}  
 	
 	CheckNull(Throw);
-	Throw->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
 	if (Throw->OnObjectThrown.IsBound())
 		Throw->OnObjectThrown.Broadcast();
 }

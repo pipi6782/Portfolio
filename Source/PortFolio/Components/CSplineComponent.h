@@ -20,6 +20,7 @@ public:
 	UCSplineComponent();
 	FORCEINLINE int32 GetIndex() { return index; }
 	FORCEINLINE ACSplinePath* GetPath() { return Path; }
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -29,6 +30,7 @@ public:
 
 	void Reset();
 	void UpdateNextIndex(const FVector& InLocation);
+
 private:
 	int32 index = 0;
 };

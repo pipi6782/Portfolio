@@ -59,7 +59,7 @@ void ACObject_Chest::Begin_Interact(class ACharacter* InCharacter)
 {
 	//이미 상호작용 했는지 검사
 	CheckTrue(bInteracted);
-
+	bInteracted = true;
 	//상호작용한 캐릭터가 플레이어인지 검사
 	CheckNull(Cast<ACPlayer>(InCharacter));
 	InteractedCharacter = Cast<ACPlayer>(InCharacter);
@@ -99,5 +99,12 @@ void ACObject_Chest::Opening(float Output)
 
 void ACObject_Chest::EndOpening()
 {
-	CLog::Print("Interacting End");
+	//만약 상호작용을 하지 않은 상태로 진입했다면 함수를 실행시키지 않음
+	CheckFalse(bInteracted);
+
+	//Idle Mode로 바꾸기 위해 State Component를 가져온다.
+	//컴포넌트가 Null값이 아니면 Idle Mode로 바꿔준다.
+	UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(InteractedCharacter);
+	CheckNull(state);
+	state->SetIdleMode();
 }

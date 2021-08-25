@@ -5,13 +5,16 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
+#include "Engine/Brush.h"
+
 #include "Character/CPlayer.h"
 #include "Components/CActionComponent.h"
+#include "Action/CAttachment.h"
 
 ACObject_Throw::ACObject_Throw()
 {
 	CHelpers::CreateActorComponent(this, &Projectile, "Projectile");
-	CHelpers::CreateComponent(this, &Box, "Box", Scene);
+	//CHelpers::CreateComponent(this, &Box, "Box", Scene);
 	CHelpers::CreateComponent(this, &Destructible, "Destructible", Scene);
 
 	UDestructibleMesh* mesh;
@@ -22,8 +25,15 @@ ACObject_Throw::ACObject_Throw()
 
 	Projectile->ProjectileGravityScale = 0.0f;
 
-	Box->SetRelativeLocation(FVector(0, 0, 50));
-	Box->SetBoxExtent(FVector(60, 60, 50));
+	//Box->SetRelativeLocation(FVector(0, 0, 50));
+	//Box->SetBoxExtent(FVector(60, 60, 50));
+}
+
+void ACObject_Throw::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+
 }
 
 void ACObject_Throw::BeginPlay()
@@ -32,8 +42,9 @@ void ACObject_Throw::BeginPlay()
 	Super::BeginPlay();
 
 	OnObjectInteract.AddDynamic(this, &ACObject_Throw::Begin_Interact);
+	OnObjectThrown.AddDynamic(this, &ACObject_Throw::DetachActor);
 	OnObjectThrown.AddDynamic(this, &ACObject_Throw::OnThrown);
-	Box->OnComponentBeginOverlap.AddDynamic(this, &ACObject_Throw::OnComponentBeginOverlap);
+	Destructible->OnComponentHit.AddDynamic(this, &ACObject_Throw::OnComponentHit);
 }
 
 void ACObject_Throw::Begin_Interact(ACharacter* InCharacter)
@@ -61,31 +72,59 @@ void ACObject_Throw::Begin_Interact(ACharacter* InCharacter)
 
 	//캐릭터와 오브젝트가 겹치는 부분이 있으니 오브젝트의 콜리전을 끈다.
 	Destructible->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	//플레이어에게 오브젝트를 붙여준다.
-	Scene->AttachToComponent(InteractedCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), "Hand_Throw");
+	SetActorLocation(FVector(0, 0, 0));
+	Destructible->AttachToComponent(InteractedCharacter->GetMesh(), FAttachmentTransformRules(EAttachmentRule::KeepRelative, true), "Hand_Throw");
 	
 	//바로 던지는것을 방지하기 위해 플레이어의 HitResult를 초기화한다.
 	InteractedCharacter->ResetHitResult();
 
 	//DoAction을 할 때 Detach를 시키기 위해서 플레이어를 오너로 설정한다.
 	SetOwner(InteractedCharacter);
+	CLog::Log(GetName()+ ", " + Destructible->GetOwner()->GetName());
 }
 
 void ACObject_Throw::OnThrown()
 {
-	SetActorRotation(InteractedCharacter->GetActorForwardVector().Rotation());
+	SetOwner(nullptr);
 	UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + GetActorForwardVector() * 300, FLinearColor::Black, 10.0f, 5.0f);
 	Destructible->GetDestructibleMesh()->DefaultDestructibleParameters.DamageParameters.bEnableImpactDamage = true;
 	Destructible->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Projectile->SetVelocityInLocalSpace(FVector(1,0,0) * 800);
-	Projectile->MaxSpeed = 20000.0f;
-	Projectile->ProjectileGravityScale = 1.0f;
+	Destructible->SetSimulatePhysics(true);
+
 }
 
-void ACObject_Throw::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ACObject_Throw::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	CheckTrue(OtherActor == InteractedCharacter);
 	CheckTrue(OtherActor == this);
-	//CheckTrue
+	CheckTrue(OtherActor->IsA<ACAttachment>());
+	Destructible->ApplyDamage(10.0f, Hit.ImpactPoint, FVector(0, 0, 1), 1.0f);
+
+	FDamageEvent e;
+
+	OtherActor->TakeDamage(10.0f, e, GetInstigatorController(), this);
+}
+
+void ACObject_Throw::DetachActor()
+{
+	Destructible->SetRelativeLocation(Destructible->GetRelativeLocation() * 2);
+	
+	CLog::Log(GetName()+ ", " + Destructible->GetOwner()->GetName());
+	
+	Destructible->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+}
+
+float ACObject_Throw::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	CheckTrueResult(bDamaged,0.0f);
+	bDamaged = true;
+	float damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	
+
+	return damage;
 }

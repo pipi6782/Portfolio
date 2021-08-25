@@ -6,11 +6,13 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "CAnimInstance.h"
+
 #include "Components/CStatusComponent.h"
 #include "Components/CStateComponent.h"
 #include "Components/CActionComponent.h"
 #include "Components/CMontageComponent.h"
 #include "Components/CSplineComponent.h"
+#include "Components/CDrawRouteComponent.h"
 #include "Objects/CObject.h"
 #include "Widgets/CUserWidget_Health.h"
 
@@ -32,6 +34,7 @@ ACPlayer::ACPlayer()
 		CHelpers::CreateActorComponent(this, &Action, "Action");
 		CHelpers::CreateActorComponent(this, &Montage, "Montage");
 		CHelpers::CreateActorComponent(this, &Spline, "Spline");
+		CHelpers::CreateActorComponent(this, &Draw, "Draw");
 	}
 
 	//Mesh Setting
@@ -114,10 +117,6 @@ void ACPlayer::BeginPlay()
 
 	HealthWidget->UpdateMaxHealth(Status->GetMaxHealth());
 	HealthWidget->UpdateHealth(Status->GetHealth());
-
-	//Binding Function
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ACPlayer::OnComponentBeginOverlap);
-	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ACPlayer::OnComponentEndOverlap);
 }
 
 // Called every frame
@@ -126,6 +125,7 @@ void ACPlayer::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	
 	SetDestination();
+	TraceObject();
 
 	float distance = FVector::Dist2D(GetActorLocation(), HitResult.ImpactPoint);
 	//Move
@@ -145,23 +145,35 @@ void ACPlayer::Tick(float DeltaTime)
 			//TODO : 라인 그리기
 			FVector pointLocation = FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, GetActorLocation().Z);
 			Spline->UpdateSplineRoute(pointLocation);
+			Draw->DrawLine(pointLocation);
 		}
 	}
 
 	//Interact With Object
-	if (bOverleppedObject)
+	if (OutHits.Num() > 0)
 	{
-		if (OverlappedActors.Contains(HitResult.Actor))
+		if (HitResult.Actor!=nullptr)
 		{
-			if (!!Cast<ACObject>(HitResult.Actor) && ClickTime == 0.0f)
-			{
-				ACObject* object = Cast<ACObject>(HitResult.Actor);
-				if (object->OnObjectInteract.IsBound())
-					object->OnObjectInteract.Broadcast(this);
+			if (HitResult.Actor->IsA<ACObject>()) {
+				for (FHitResult hitResult : OutHits)
+				{
+					ACObject* object = Cast<ACObject>(hitResult.Actor);
+					if (!!object)
+					{
+						if (Action->IsUnarmedMode() || Action->IsSwordMode())
+						{
+							if (State->IsIdleMode())
+							{
+								object->OnObjectInteract.Broadcast(this);
+								UGameplayStatics::GetPlayerController(GetWorld(), 0)->StopMovement();
+								Status->SetStop();
+							}
+						}
+					}
+				}
 			}
 		}
 	}
-	
 	
 	//Throwing Object
 	if (Action->IsThrowingMode())
@@ -238,25 +250,6 @@ void ACPlayer::OnChangeWeapon()
 	Status->SetStop();
 }
 
-void ACPlayer::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	CheckNull(Cast<ACObject>(OtherActor));
-	CheckFalse((Action->IsUnarmedMode() || Action->IsSwordMode()));					//지금 내 상태를 체크
-	CheckFalse(State->IsIdleMode());												//피격이 아닌지 체크
-	CheckTrue(OtherActor != HitResult.Actor);										//충돌한 대상이 내가 상호작용하고자 하는 대상인가
-	ACObject* object = Cast<ACObject>(HitResult.Actor);								
-	CheckNull(object);																//내가 가리킨 대상이 오브젝트인가
-	UGameplayStatics::GetPlayerController(GetWorld(), 0)->StopMovement();
-	OverlappedActors.Add(OtherActor);
-	bOverleppedObject = true;
-}
-
-void ACPlayer::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	CheckFalse(OverlappedActors.Contains(OtherActor));
-	OverlappedActors.Remove(OtherActor);
-}
-
 void ACPlayer::MoveToDestination()
 {
 	//마우스를 클릭한 곳으로 이동
@@ -280,18 +273,35 @@ void ACPlayer::SetDestination()
 	playerController->GetHitResultUnderCursorForObjects(quries, true, HitResult);
 
 	float distance = FVector::Dist2D(GetActorLocation(), HitResult.ImpactPoint);
+	distance = FMath::Clamp(distance, 0.0f, 600.0f);
 
-	if (distance <= WalkDistance)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = Status->GetWalkSpeed();
-		return;
-	}
-	if (distance <= RunDistance)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = Status->GetRunSpeed();
-		return;
-	}
-	GetCharacterMovement()->MaxWalkSpeed = Status->GetSprintSpeed();
+	GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(0.0f,600.0f,distance/600.0f);
+}
+
+void ACPlayer::TraceObject()
+{
+	CheckFalse((Action->IsUnarmedMode() || Action->IsSwordMode()));
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> quries;
+	quries.Add(EObjectTypeQuery::ObjectTypeQuery2);
+	quries.Add(EObjectTypeQuery::ObjectTypeQuery6);
+
+	TArray<AActor*> ignores;
+	FVector start = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z - 20.0f);
+	FVector end = start + GetActorForwardVector() * 100;
+	UKismetSystemLibrary::LineTraceMultiForObjects
+	(
+		GetWorld(),
+		start,
+		end,
+		quries,
+		false,
+		ignores,
+		EDrawDebugTrace::None,
+		OutHits,
+		true
+
+	);
 }
 
 void ACPlayer::DrawObjectLine()

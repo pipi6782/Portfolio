@@ -21,7 +21,7 @@ protected:
 		class UTextRenderComponent* Text;
 
 	UPROPERTY(EditAnywhere)
-		float UpdateDistance = 10.0f;
+		float UpdateDistance = 20.0f;
 
 
 	UPROPERTY(EditAnywhere)
@@ -30,6 +30,9 @@ protected:
 public:	
 	// Sets default values for this actor's properties
 	ACSplinePath();
+
+public:
+	FORCEINLINE float GetUpdateDistance() { return UpdateDistance; }
 
 protected:
 	// Called when the game starts or when spawned

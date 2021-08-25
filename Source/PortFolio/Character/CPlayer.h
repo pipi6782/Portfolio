@@ -44,6 +44,9 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCSplineComponent* Spline;
 
+	UPROPERTY(VisibleDefaultsOnly)
+		class UCDrawRouteComponent* Draw;
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 		float WalkDistance = 200.0f;
@@ -79,20 +82,17 @@ private:
 
 	void OnChangeWeapon();
 
-	UFUNCTION()
-		void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-		void OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
 	void MoveToDestination();
 
 	void SetDestination();
+
+	void TraceObject();
 
 	void DrawObjectLine();
 
 private:
 	FHitResult HitResult;
+	TArray<FHitResult> OutHits;
 
 	bool bClicked = false;
 
@@ -100,8 +100,4 @@ private:
 		class UCUserWidget_Health* HealthWidget;
 
 	float ClickTime = 0.0f;
-
-	bool bOverleppedObject = false;
-
-	TArray<AActor*> OverlappedActors;
 };
