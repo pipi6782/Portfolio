@@ -1,5 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "CAction.h"
+#include "CAttachment.h"
 
+TArray<ACAttachment*> UCAction::GetAttachments()
+{
+    return Attachments;
+}

@@ -5,16 +5,14 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
-#include "Engine/Brush.h"
-
 #include "Character/CPlayer.h"
 #include "Components/CActionComponent.h"
 #include "Action/CAttachment.h"
+#include "CObject_Heart.h"
 
 ACObject_Throw::ACObject_Throw()
 {
 	CHelpers::CreateActorComponent(this, &Projectile, "Projectile");
-	//CHelpers::CreateComponent(this, &Box, "Box", Scene);
 	CHelpers::CreateComponent(this, &Destructible, "Destructible", Scene);
 
 	UDestructibleMesh* mesh;
@@ -24,15 +22,6 @@ ACObject_Throw::ACObject_Throw()
 	Destructible->GetDestructibleMesh()->DefaultDestructibleParameters.DamageParameters.bEnableImpactDamage = false;
 
 	Projectile->ProjectileGravityScale = 0.0f;
-
-	//Box->SetRelativeLocation(FVector(0, 0, 50));
-	//Box->SetBoxExtent(FVector(60, 60, 50));
-}
-
-void ACObject_Throw::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
 
 }
 
@@ -72,7 +61,6 @@ void ACObject_Throw::Begin_Interact(ACharacter* InCharacter)
 
 	//캐릭터와 오브젝트가 겹치는 부분이 있으니 오브젝트의 콜리전을 끈다.
 	Destructible->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	//플레이어에게 오브젝트를 붙여준다.
 	SetActorLocation(FVector(0, 0, 0));
@@ -88,8 +76,6 @@ void ACObject_Throw::Begin_Interact(ACharacter* InCharacter)
 
 void ACObject_Throw::OnThrown()
 {
-	SetOwner(nullptr);
-	UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + GetActorForwardVector() * 300, FLinearColor::Black, 10.0f, 5.0f);
 	Destructible->GetDestructibleMesh()->DefaultDestructibleParameters.DamageParameters.bEnableImpactDamage = true;
 	Destructible->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Projectile->SetVelocityInLocalSpace(FVector(1,0,0) * 800);
@@ -99,32 +85,84 @@ void ACObject_Throw::OnThrown()
 
 void ACObject_Throw::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	CheckTrue(OtherActor == InteractedCharacter);
-	CheckTrue(OtherActor == this);
+	CheckTrue(OtherActor == UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	CheckTrue(OtherActor->GetName().Compare(GetName()) == 0);
 	CheckTrue(OtherActor->IsA<ACAttachment>());
-	Destructible->ApplyDamage(10.0f, Hit.ImpactPoint, FVector(0, 0, 1), 1.0f);
+	CheckNull(GetOwner());
+
+	Destructible->ApplyDamage(1000.0f, Hit.ImpactPoint, FVector(0, 0, 1), 1.0f);
 
 	FDamageEvent e;
+	
+	CLog::Print(GetOwner()->GetName() + ", " + GetOwner()->GetInstigatorController()->GetName() );
+	OtherActor->TakeDamage(1000.0f, e, GetOwner()->GetInstigatorController(), this);
 
-	OtherActor->TakeDamage(10.0f, e, GetInstigatorController(), this);
+	float WaitTime = 1.5f;
+	FTimerHandle WaitHandle;
+	if (bDamaged == false)
+	{
+		bDamaged = true;
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			WaitHandle,
+			FTimerDelegate::CreateLambda([&]() //[&] 이곳에 들어오는 함수들은 전부 다 참조변수이다, 내부에서 수정 시 영향을 미침
+				{
+					Destroy();
+				}),
+			WaitTime,
+			false
+		);
+
+		SpawnObject(Hit.ImpactPoint);
+	}
+
+
 }
 
 void ACObject_Throw::DetachActor()
 {
-	Destructible->SetRelativeLocation(Destructible->GetRelativeLocation() * 2);
-	
-	CLog::Log(GetName()+ ", " + Destructible->GetOwner()->GetName());
-	
 	Destructible->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, true));
+}
+
+void ACObject_Throw::SpawnObject(FVector InLocation)
+{
+	FTransform transform;
+	transform.SetLocation(InLocation + FVector(0,0,25));
+	transform.SetScale3D(FVector(0.7f, 0.7f, 0.7f));
+
+	GetWorld()->SpawnActor<ACObject_Heart>
+		(
+			ACObject_Heart::StaticClass(),
+			transform
+		);
 }
 
 float ACObject_Throw::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	CheckTrueResult(bDamaged,0.0f);
-	bDamaged = true;
 	float damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	Destructible->ApplyDamage(damage, GetActorLocation(), FVector(0, 0, 1), 10.0f);
 
-	
+	FTimerHandle WaitHandle;
+	float WaitTime = 1.5f;
+	if (bDamaged == false)
+	{
+		bDamaged = true;
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			WaitHandle,
+			FTimerDelegate::CreateLambda([&]() //[&] 이곳에 들어오는 함수들은 전부 다 참조변수이다, 내부에서 수정 시 영향을 미침
+			{
+				if(!!GetOwner())
+					SetOwner(nullptr);
+				Destroy();
+			}),
+			WaitTime,
+			false
+		);
+
+		SpawnObject(GetActorLocation());
+	}
 
 	return damage;
 }

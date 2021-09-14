@@ -56,7 +56,7 @@ public:
 	friend class UCActionData;
 
 public:
-	FORCEINLINE class ACAttachment* GetAttachment(int32 index) { return Attachments[index]; }
+	TArray<class ACAttachment*> GetAttachments();
 	FORCEINLINE class ACEquipment* GetEquipment() { return Equipment; }
 	FORCEINLINE class ACDoAction* GetDoAction() { return DoAction; }
 	FORCEINLINE FLinearColor GetEquipmentColor() { return EquipmentColor; }

@@ -7,7 +7,7 @@
 UENUM(BlueprintType)
 enum class EStateType : uint8 //현재 캐릭터의 상태를 나타냄
 {
-	Idle, Action, Equip, Rolling, Interacting, Damaged, Max
+	Idle, Action, Equip, Rolling, Interacting, Damaged, Dead, Max
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FStateTypeChanged, EStateType, InPrevType, EStateType, InNewType);
@@ -16,12 +16,6 @@ UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PORTFOLIO_API UCStateComponent : public UActorComponent
 {
 	GENERATED_BODY()
-		
-private:
-	UPROPERTY(EditAnywhere)
-		float Test1 = 100.0f;
-	UPROPERTY(EditAnywhere)
-		FString Test2;
 
 public:
 	FORCEINLINE EStateType GetType() { return Type; }
@@ -35,6 +29,7 @@ public:
 	UFUNCTION(BlueprintPure) FORCEINLINE bool IsRollingMode() { return Type == EStateType::Rolling; }
 	UFUNCTION(BlueprintPure) FORCEINLINE bool IsDamagedMode() { return Type == EStateType::Damaged; }
 	UFUNCTION(BlueprintPure) FORCEINLINE bool IsInteractingMode() { return Type == EStateType::Interacting; }
+	UFUNCTION(BlueprintPure) FORCEINLINE bool IsDeadMode() { return Type == EStateType::Dead; }
 
 public :
 	void SetIdleMode();
@@ -43,6 +38,7 @@ public :
 	void SetRollingMode();
 	void SetDamagedMode();
 	void SetInteractingMode();
+	void SetDeadMode();
 
 private:
 	void ChangeType(EStateType InNewType);

@@ -4,16 +4,25 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/CStateComponent.h"
+#include "Interfaces/ICharacter.h"
+#include "GenericTeamAgentInterface.h"
 #include "CPlayer.generated.h"
 
 UCLASS()
-class PORTFOLIO_API ACPlayer : public ACharacter
+class PORTFOLIO_API ACPlayer : public ACharacter, public IICharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
+private:
+	UPROPERTY(EditAnywhere, Category = "Team")
+		uint8 TeamID = 0;
 
 private:
 	//SceneComponent
+	UPROPERTY(VisibleDefaultsOnly)
+		class USkeletalMeshComponent* OutlineMesh;
+
 	UPROPERTY(VisibleDefaultsOnly)
 		class USpringArmComponent* SpringArm;
 
@@ -26,6 +35,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Widget")
 		TSubclassOf<class UCUserWidget_Health> HealthWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Widget")
+		TSubclassOf<class UCUserWidget_Weapon> WeaponWidgetClass;
 
 private:
 	//ActorComponent
@@ -49,13 +60,7 @@ private:
 
 private:
 	UPROPERTY(EditDefaultsOnly)
-		float WalkDistance = 200.0f;
-
-	UPROPERTY(EditDefaultsOnly)
-		float RunDistance = 400.0f;
-
-	UPROPERTY(EditDefaultsOnly)
-		float SprintDistance = 600.0f;
+		float SprintDistance = 300.0f;
 
 	UPROPERTY(EditDefaultsOnly)
 		float ThrowDistance = 300.0f;
@@ -64,10 +69,12 @@ public:
 	FORCEINLINE class UCStatusComponent* GetStatusComponent() { return Status; }
 	FORCEINLINE class UCUserWidget_Health* GetHealthWidget() { return HealthWidget; }
 	FORCEINLINE void ResetHitResult() { HitResult = FHitResult();}
+	FORCEINLINE bool IsHiding() { return bHideInZone; }
 
 public:
 	ACPlayer();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
 protected:
 	virtual void BeginPlay() override;
 
@@ -76,19 +83,25 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual FGenericTeamId GetGenericTeamId() const override;
+
+	void Dead();
+	virtual void End_Dead() override;
+
+	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	void EnableHidden();
+	void DisableHidden();
+
 private:
 	void OnAction();
 	void OffAction();
-
-	void OnChangeWeapon();
-
+	
 	void MoveToDestination();
 
 	void SetDestination();
 
 	void TraceObject();
-
-	void DrawObjectLine();
 
 private:
 	FHitResult HitResult;
@@ -99,5 +112,13 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCUserWidget_Health* HealthWidget;
 
+	UPROPERTY(VisibleDefaultsOnly)
+		class UCUserWidget_Weapon* WeaponWidget;
+
+	bool bHideInZone = false;
+
 	float ClickTime = 0.0f;
+
+	class UMaterialInstanceDynamic* OutlineMaterial;
+	class AController* DamageInstigator;
 };

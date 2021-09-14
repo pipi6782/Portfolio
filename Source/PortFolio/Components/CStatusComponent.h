@@ -1,11 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "CStatusComponent.generated.h"
 
+UENUM(BlueprintType)
+enum class ECharacterSpeed : uint8
+{
+	Walk, Run, Sprint, Max
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PORTFOLIO_API UCStatusComponent : public UActorComponent
@@ -15,15 +18,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Health")
 		float MaxHealth = 3.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Health")
-		float WalkSpeed = 200.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Health")
-		float RunSpeed = 400.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Health")
-		float SprintSpeed = 600.0f;
-
+	UPROPERTY(EditAnywhere, Category = "Speed")
+		float Speed[(int32)ECharacterSpeed::Max] = { 200, 400, 600 };
 
 public:
 	//Health
@@ -32,9 +28,9 @@ public:
 
 public:
 	//Speed
-	FORCEINLINE float GetWalkSpeed() { return WalkSpeed; }
-	FORCEINLINE float GetRunSpeed() { return RunSpeed; }
-	FORCEINLINE float GetSprintSpeed() { return SprintSpeed; }
+	FORCEINLINE float GetWalkSpeed() { return Speed[static_cast<int32>(ECharacterSpeed::Walk)]; }
+	FORCEINLINE float GetRunSpeed() { return Speed[static_cast<int32>(ECharacterSpeed::Run)]; }
+	FORCEINLINE float GetSprintSpeed() { return Speed[static_cast<int32>(ECharacterSpeed::Sprint)]; }
 
 	FORCEINLINE bool CanMove() { return bCanMove; }
 
@@ -45,6 +41,8 @@ public:
 	void SubHealth(float InAmount);
 
 	void AddMaxHealth();
+
+	void SetSpeed(ECharacterSpeed InSpeed);
 
 public:	
 	// Sets default values for this component's properties

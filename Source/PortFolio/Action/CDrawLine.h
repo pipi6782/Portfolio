@@ -10,20 +10,24 @@ class PORTFOLIO_API ACDrawLine : public AActor
 	GENERATED_BODY()
 	
 protected:
-	UPROPERTY(VisibleDefaultsOnly)
-		class USceneComponent* Scene;
-
-	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
-		class USplineComponent* Spline;
+	UPROPERTY(EditDefaultsOnly)
+		class UParticleSystem* Particle;
 
 public:	
 	ACDrawLine();
 
 	virtual void Tick(float DeltaSeconds) override;
+
+	bool CheckLength(const FVector& InLocation);
 protected:
 	virtual void BeginPlay() override;
 
 public:
-	UFUNCTION(BlueprintImplementableEvent)
-		void Draw(const FVector& InLocation);
+	void Draw(const FVector& InLocation);
+
+	UFUNCTION()
+		void ResetParticles();
+
+private:
+	TArray<class UParticleSystemComponent*> Particles;
 };

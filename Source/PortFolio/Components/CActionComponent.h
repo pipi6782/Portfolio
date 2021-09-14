@@ -13,6 +13,7 @@ enum class EActionType : uint8 //어떤 무기를 장착하고있는가
 	Sword,		//검을 획득한 이후 쭉(maybe)
 	Throwing,	//던질수 있는 오브젝트를 들고 있을 때
 	Boomerang,	//부메랑 사용중 취하는 액션
+	Wizard,		//보스전용 모드
 	Max
 };
 
@@ -42,15 +43,23 @@ public:
 		FORCEINLINE bool IsThrowingMode() { return Type == EActionType::Throwing; }
 	UFUNCTION(BlueprintPure)
 		FORCEINLINE bool IsBoomerangMode() { return Type == EActionType::Boomerang; }
+	UFUNCTION(BlueprintPure)
+		FORCEINLINE bool IsWizardMode() { return Type == EActionType::Wizard; }
 
 	UFUNCTION(BlueprintCallable)
 		void SetUnarmedMode();
+
 	UFUNCTION(BlueprintCallable)
 		void SetSwordMode();
+
 	UFUNCTION(BlueprintCallable)
 		void SetThrowingMode();
+
 	UFUNCTION(BlueprintCallable)
 		void SetBoomerangMode();
+
+	UFUNCTION(BlueprintCallable)
+		void SetWizardMode();
 
 public:
 	FORCEINLINE int32 GetType() { return static_cast<int32>(Type); }
@@ -58,9 +67,17 @@ public:
 public:
 	void DoAction();
 
+	void Dead();
+	void End_Dead();
+
+	void AbortByDamage();
+
 private:
+	void OffAllCollision();
+
 	void SetMode(EActionType InType);
 	void ChangeType(EActionType InNewType);
+
 
 protected:
 	virtual void BeginPlay() override;

@@ -25,8 +25,6 @@ protected:
 public:
 	ACObject_Throw();
 
-	virtual void Tick(float DeltaSeconds) override;
-
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 protected:
 	virtual void BeginPlay() override;
@@ -41,7 +39,8 @@ protected:
 
 	UFUNCTION()
 		void DetachActor();
-
+	
+	void SpawnObject(FVector InLocation);
 public:
 	//Purpose : 오브젝트를 던질때 실행할 함수들을 바인딩
 	// Call : ACDoAction_Throw::Begin_DoAction 호출시

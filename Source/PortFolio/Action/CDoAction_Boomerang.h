@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,9 +5,8 @@
 #include "Components/TimelineComponent.h"
 #include "CDoAction_Boomerang.generated.h"
 
-/**
- * 
- */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBoomerang_End);
+
 UCLASS()
 class PORTFOLIO_API ACDoAction_Boomerang : public ACDoAction
 {
@@ -31,6 +28,9 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	
+	virtual void OnAttachmentBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class AActor* InOtherActor) override;
+
+	virtual void OnAttachmentEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class AActor* InOtherActor) override;
 private:
 	UFUNCTION()
 		void ReturnToPlayer();
@@ -41,10 +41,18 @@ private:
 	UFUNCTION()
 		void OnBoomerangThrowing(float Output);
 
+	UFUNCTION()
+		void Unequip_Boomerang();
+
+	void Abort();
+
 private:
 	class ACAttachment* boomerang;
 	class UCSplineComponent* Spline;
 
 	FTimeline Timeline;
+	
+	FBoomerang_End OnBoomerang_End;
 
+	TArray<class AActor*> DamagedActors;
 };

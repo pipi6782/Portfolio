@@ -31,6 +31,11 @@ void UCStateComponent::SetInteractingMode()
 	ChangeType(EStateType::Interacting);
 }
 
+void UCStateComponent::SetDeadMode()
+{
+	ChangeType(EStateType::Dead);
+}
+
 void UCStateComponent::SetEquipMode()
 {
 	ChangeType(EStateType::Equip);

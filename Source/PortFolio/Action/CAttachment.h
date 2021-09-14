@@ -6,8 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "CAttachment.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttachmentBeginOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttachmentEndOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class ACharacter*, InOtherCharacter);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttachmentBeginOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class AActor*, InOtherActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAttachmentEndOverlap, class ACharacter*, InAttacker, class AActor*, InAttackCauser, class AActor*, InOtherActor);
 
 
 UCLASS()
@@ -36,8 +36,11 @@ public:
 	// Sets default values for this actor's properties
 	ACAttachment();
 
-	void OnCollision();
-	void OffCollision();
+	UFUNCTION(BlueprintCallable)
+		void OnCollision();
+
+	UFUNCTION(BlueprintCallable)
+		void OffCollision();
 
 protected:
 	// Called when the game starts or when spawned

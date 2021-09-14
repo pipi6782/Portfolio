@@ -5,6 +5,7 @@
 #include "Character/CPlayer.h"
 #include "Components/CStateComponent.h"
 #include "Components/CStatusComponent.h"
+#include "CObject_Life.h"
 
 ACObject_Chest::ACObject_Chest()
 {
@@ -44,6 +45,8 @@ void ACObject_Chest::BeginPlay()
 	OnTimelineEvent.BindUFunction(this, "EndOpening");
 
 	Timeline.SetTimelineFinishedFunc(OnTimelineEvent);
+
+	Timeline.SetPlayRate(OpeningSpeed);
 
 	OnObjectInteract.AddDynamic(this, &ACObject_Chest::Begin_Interact);
 }
@@ -107,4 +110,7 @@ void ACObject_Chest::EndOpening()
 	UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(InteractedCharacter);
 	CheckNull(state);
 	state->SetIdleMode();
+
+	//상자에서 오브젝트를 스폰시킨다.
+	GetWorld()->SpawnActor<ACObject_Life>(ACObject_Life::StaticClass(),GetActorLocation(),FRotator(0,0,0));
 }

@@ -15,6 +15,7 @@ class PORTFOLIO_API ACDoAction : public AActor
 public:
 	FORCEINLINE void SetDatas(TArray<FDoActionData> InDatas) { Datas = InDatas; }
 
+	FORCEINLINE bool GetAction() { return bAction; }
 public:	
 	ACDoAction();
 
@@ -25,10 +26,10 @@ public:
 
 public:
 	UFUNCTION()
-		virtual void OnAttachmentBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter) {}
+		virtual void OnAttachmentBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class AActor* InOtherActor) {}
 
 	UFUNCTION()
-		virtual void OnAttachmentEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class ACharacter* InOtherCharacter) {}
+		virtual void OnAttachmentEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class AActor* InOtherActor) {}
 
 
 
@@ -50,4 +51,5 @@ protected:
 
 protected:
 	TArray<FDoActionData> Datas;
+	bool bAction = false;
 };

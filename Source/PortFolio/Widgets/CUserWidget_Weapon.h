@@ -13,5 +13,22 @@ UCLASS()
 class PORTFOLIO_API UCUserWidget_Weapon : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
+private:
+	UPROPERTY(meta = (BindWidget))
+		class UBorder* WeaponBorder;
+
+	UPROPERTY(meta = (BindWidget))
+		class UButton* WeaponButton;
+
+public:
+	UFUNCTION(BlueprintCallable)
+		void PressingButton();
+
+	UFUNCTION(BlueprintCallable)
+		void UnHoverButton();
+
+	UFUNCTION(BlueprintCallable)
+		void Clickedbutton();
+
 };

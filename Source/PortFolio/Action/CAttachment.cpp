@@ -59,12 +59,12 @@ void ACAttachment::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedCompon
 	CheckTrue(OwnerCharacter->GetClass() == OtherActor->GetClass());
 
 	if (OnAttachmentBeginOverlap.IsBound())
-		OnAttachmentBeginOverlap.Broadcast(OwnerCharacter, this, Cast<ACharacter>(OtherActor));
+		OnAttachmentBeginOverlap.Broadcast(OwnerCharacter, this, OtherActor);
 }
 
 void ACAttachment::OnComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	//TODO : 검으로 항아리 공격했을때 수정하기
 	if (OnAttachmentEndOverlap.IsBound())
-		OnAttachmentEndOverlap.Broadcast(OwnerCharacter, this, Cast<ACharacter>(OtherActor));
+		OnAttachmentEndOverlap.Broadcast(OwnerCharacter, this, OtherActor);
 }

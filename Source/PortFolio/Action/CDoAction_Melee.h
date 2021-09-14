@@ -14,4 +14,15 @@ class PORTFOLIO_API ACDoAction_Melee : public ACDoAction
 {
 	GENERATED_BODY()
 	
+public:
+	void DoAction() override;
+	void Begin_DoAction() override;
+	void End_DoAction() override;
+
+public:
+	void OnAttachmentBeginOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class AActor* InOtherActor) override;
+	void OnAttachmentEndOverlap(class ACharacter* InAttacker, class AActor* InAttackCauser, class AActor* InOtherActor) override;
+
+private:
+	TArray<class AActor*> DamagedActor;
 };

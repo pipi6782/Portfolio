@@ -47,7 +47,7 @@ void UCMontageComponent::PlayAnimMontage(EStateType InStateType)
 
 void UCMontageComponent::PlayDead()
 {
-	//PlayAnimMontage(EStateType::Dead)
+	PlayAnimMontage(EStateType::Dead);
 }
 
 void UCMontageComponent::PlayDamaged()

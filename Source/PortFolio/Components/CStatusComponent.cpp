@@ -1,5 +1,7 @@
 #include "CStatusComponent.h"
 #include "Global.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
 #include "Character/CPlayer.h"
 #include "Widgets/CUserWidget_Health.h"
 
@@ -11,7 +13,7 @@ void UCStatusComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Health = MaxHealth;
+	Health = 0.5f;
 
 	OwnerCharacter = Cast<ACPlayer>(GetOwner());
 
@@ -33,7 +35,7 @@ void UCStatusComponent::AddHealth(float InAmount)
 	Health += InAmount;
 	Health = FMath::Clamp(Health, 0.0f, MaxHealth);
 	OwnerCharacter->GetHealthWidget();
-	//TODO : 체력 증가에 따른 위젯 갱신
+	
 	CheckNull(OwnerCharacter);
 	OwnerCharacter->GetHealthWidget()->UpdateHealth(Health);
 }
@@ -43,16 +45,25 @@ void UCStatusComponent::SubHealth(float InAmount)
 	Health -= InAmount;
 	Health = FMath::Clamp(Health, 0.0f, MaxHealth);
 	OwnerCharacter->GetHealthWidget();
-	//TODO : 체력 감소에 따른 위젯 갱신
+	
 	CheckNull(OwnerCharacter);
 	OwnerCharacter->GetHealthWidget()->UpdateHealth(Health);
 }
 
 void UCStatusComponent::AddMaxHealth()
 {
-	MaxHealth += 1;;
-	//TODO : 최대체력 증가에 따른 위젯 갱신
+	MaxHealth += 1;
+	MaxHealth = FMath::Clamp(MaxHealth, 0.0f, 6.0f);
+
 	CheckNull(OwnerCharacter);
 
+	float remain = MaxHealth - Health;
+	AddHealth(remain);
 	OwnerCharacter->GetHealthWidget()->UpdateMaxHealth(MaxHealth);
+}
+
+void UCStatusComponent::SetSpeed(ECharacterSpeed InSpeed)
+{
+	UCharacterMovementComponent* movement = CHelpers::GetComponent<UCharacterMovementComponent>(GetOwner());
+	movement->MaxWalkSpeed = Speed[(int32)InSpeed];
 }

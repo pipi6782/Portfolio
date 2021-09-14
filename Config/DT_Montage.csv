@@ -1,3 +1,3 @@
 ,Type,AnimMontage,StartSection,bCanMove
-1,Damaged,,,FALSE
-2,Dead,,,FALSE
+1,Damaged,AnimMontage'/Game/Character/Montages/Common/Side_Hit_Montage.Side_Hit_Montage',,FALSE
+2,Dead,AnimMontage'/Game/Character/Montages/Common/Standing_React_Death_Forward_Montage.Standing_React_Death_Forward_Montage',,FALSE

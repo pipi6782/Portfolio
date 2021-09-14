@@ -1,7 +1,9 @@
 #include "CDoAction_Boomerang.h"
 #include "Global.h"
 #include "GameFramework/Character.h"
+#include "Components/SkeletalMeshComponent.h"
 
+#include "Character/CEnemy.h"
 #include "Components/SplineComponent.h"
 #include "Components/CStateComponent.h"
 #include "Components/CStatusComponent.h"
@@ -10,6 +12,11 @@
 #include "CAttachment.h"
 #include "CEquipment.h"
 #include "CSplinePath.h"
+#include "CDoAction_Boomerang.h"
+#include "CDrawLine.h"
+#include "Objects/CObject_Chest.h"
+#include "Objects/CObject_Heart.h"
+
 
 ACDoAction_Boomerang::ACDoAction_Boomerang()
 {
@@ -42,6 +49,18 @@ void ACDoAction_Boomerang::BeginPlay()
 	finish.BindUFunction(this, "OnBoomerangEnd");
 
 	Timeline.SetTimelineFinishedFunc(finish);
+
+	ACDrawLine* draw = nullptr;
+	TArray<AActor*> actors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDrawLine::StaticClass(), actors);
+
+	for (AActor* actor : actors)
+	{
+		draw = Cast<ACDrawLine>(actor);
+		if (!!draw) break;
+	}
+
+	OnBoomerang_End.AddDynamic(draw, &ACDrawLine::ResetParticles);
 }
 
 void ACDoAction_Boomerang::DoAction()
@@ -51,6 +70,7 @@ void ACDoAction_Boomerang::DoAction()
 	{
 		OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
 	}
+	bAction = true;
 }
 
 void ACDoAction_Boomerang::Begin_DoAction()
@@ -81,9 +101,66 @@ void ACDoAction_Boomerang::Tick(float DeltaTime)
 		Timeline.TickTimeline(DeltaTime);
 }
 
+void ACDoAction_Boomerang::OnAttachmentBeginOverlap(ACharacter* InAttacker, AActor* InAttackCauser, AActor* InOtherActor)
+{
+	Super::OnAttachmentBeginOverlap(InAttacker, InAttackCauser, InOtherActor);
+	CheckNull(InOtherActor);
+
+	//이미 겹친 액터들은 대미지를 주지 않음
+	for (const AActor* actor : DamagedActors)
+	{
+		if (InOtherActor == actor)
+		{
+			return;
+		}
+	}
+
+	DamagedActors.Add(InOtherActor);
+
+	if (InOtherActor->IsA<ACObject_Chest>())
+	{
+		Abort();
+		return;
+	}
+
+
+	//HitStop
+	float hitStop = Datas[0].HitStop;
+	FTimerHandle WaitHandle;
+	if (FMath::IsNearlyZero(hitStop) == false)
+	{
+		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			WaitHandle,
+			FTimerDelegate::CreateLambda([&]() //[&] 이곳에 들어오는 함수들은 전부 다 참조변수이다, 내부에서 수정 시 영향을 미침
+				{
+					UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+				}),
+			hitStop * 2e-2f,
+			false
+		);
+	}
+
+	//SendDamage
+	FDamageEvent e;
+	InOtherActor->TakeDamage(Datas[0].Power, e, InAttacker->GetInstigatorController(), InAttackCauser);
+
+	if (!!Cast<ACEnemy>(InOtherActor))
+		Abort();
+}
+
+void ACDoAction_Boomerang::OnAttachmentEndOverlap(ACharacter* InAttacker, AActor* InAttackCauser, AActor* InOtherActor)
+{
+	Super::OnAttachmentEndOverlap(InAttacker, InAttackCauser, InOtherActor);
+	DamagedActors.Empty();
+}
+
 void ACDoAction_Boomerang::OnBoomerangEnd()
 {
 	//캐릭터에게 돌아가는 타이머 실행
+	if (OnBoomerang_End.IsBound())
+		OnBoomerang_End.Broadcast();
 	UKismetSystemLibrary::K2_SetTimer(this, "ReturnToPlayer", timer, true);
 }
 
@@ -97,16 +174,31 @@ void ACDoAction_Boomerang::OnBoomerangThrowing(float Output)
 	boomerang->SetActorLocationAndRotation(location, boomerang->GetActorRotation() + deltaRotation);
 }
 
+void ACDoAction_Boomerang::Unequip_Boomerang()
+{
+	boomerang->OnUnequip();
+	Spline->Reset();
+	boomerang->OffCollision();
+	UKismetSystemLibrary::K2_ClearTimer(this, "ReturnToPlayer");
+	bAction = false;
+}
+
+void ACDoAction_Boomerang::Abort()
+{
+	Timeline.Stop();
+	//캐릭터에게 돌아가는 타이머 실행
+	if (OnBoomerang_End.IsBound())
+		OnBoomerang_End.Broadcast();
+	UKismetSystemLibrary::K2_SetTimer(this, "ReturnToPlayer", timer, true);
+}
+
 void ACDoAction_Boomerang::ReturnToPlayer()
 {
 	CheckNull(Spline);
-	//거리 = 속력 * 시간
-	//length = speed * time
-	//time = 1000/length
-	//speed = 1000
-	//deltatime = 1/60
+
 	static int32 start = 1000;
-	float speed = start++/Spline->GetPath()->GetSpline()->GetSplineLength();
+	float speed = start/Spline->GetPath()->GetSpline()->GetSplineLength();
+	start += 5;
 
 	FVector location = boomerang->GetActorLocation();
 
@@ -118,9 +210,6 @@ void ACDoAction_Boomerang::ReturnToPlayer()
 
 	if (boomerang->GetDistanceTo(OwnerCharacter)<=75.0f)
 	{
-		boomerang->OnUnequip();
-		Spline->Reset();
-		boomerang->OffCollision();
-		UKismetSystemLibrary::K2_ClearTimer(this, "ReturnToPlayer");
+		Unequip_Boomerang();
 	}
 }

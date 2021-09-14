@@ -5,8 +5,10 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
-#include "CAnimInstance.h"
+#include "Materials/MaterialInstanceConstant.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
+#include "CAnimInstance.h"
 #include "Components/CStatusComponent.h"
 #include "Components/CStateComponent.h"
 #include "Components/CActionComponent.h"
@@ -15,6 +17,7 @@
 #include "Components/CDrawRouteComponent.h"
 #include "Objects/CObject.h"
 #include "Widgets/CUserWidget_Health.h"
+#include "Widgets/CUserWidget_Weapon.h"
 
 ACPlayer::ACPlayer()
 {
@@ -25,6 +28,7 @@ ACPlayer::ACPlayer()
 		CHelpers::CreateComponent(this, &SpringArm, "SpringArm", GetMesh());
 		CHelpers::CreateComponent(this, &Camera, "Camera", SpringArm);
 		CHelpers::CreateComponent(this, &Pitching, "Pitching", GetMesh());
+		CHelpers::CreateComponent(this, &OutlineMesh, "OutlineMesh", GetCapsuleComponent());
 	}
 	
 	//Create ActorComponent
@@ -49,7 +53,7 @@ ACPlayer::ACPlayer()
 
 		{
 			USkeletalMesh* mesh;
-			CHelpers::GetAsset(&mesh, "SkeletalMesh'/Game/Character/Mesh/SK_Mannequin.SK_Mannequin'");
+			CHelpers::GetAsset(&mesh, "SkeletalMesh'/Game/InfinityBladeWarriors/Character/CompleteCharacters/SK_CharM_Natural.SK_CharM_Natural'");
 			GetMesh()->SetSkeletalMesh(mesh);
 			GetMesh()->SetRelativeLocation(FVector(0, 0, -88));
 			GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
@@ -96,7 +100,30 @@ ACPlayer::ACPlayer()
 	//Widget Setting
 	{
 		CHelpers::GetClass(&HealthWidgetClass, "WidgetBlueprint'/Game/Widgets/WB_Health.WB_Health_C'");
+		CHelpers::GetClass(&WeaponWidgetClass, "WidgetBlueprint'/Game/Widgets/WB_Weapon.WB_Weapon_C'");
 	}
+
+	//OutlineMesh Setting
+	{
+		USkeletalMesh* mesh;
+		CHelpers::GetAsset(&mesh, "SkeletalMesh'/Game/InfinityBladeWarriors/Character/CompleteCharacters/SK_CharM_Natural.SK_CharM_Natural'");
+		OutlineMesh->SetSkeletalMesh(mesh);
+		OutlineMesh->SetRelativeLocation(FVector(0, 0, -88));
+		OutlineMesh->SetRelativeRotation(FRotator(0, -90, 0));
+		OutlineMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		TSubclassOf<UCAnimInstance> animClass;
+		CHelpers::GetClass(&animClass, "AnimBlueprint'/Game/Player/ABP_CPlayer.ABP_CPlayer_C'");
+		OutlineMesh->SetAnimClass(animClass);
+	}
+}
+
+void ACPlayer::OnConstruction(const FTransform& Transform)
+{
+	//Material Setting
+	UMaterialInstanceConstant* lineMaterial;
+	CHelpers::GetAssetDynamic(&lineMaterial, "MaterialInstanceConstant'/Game/InfinityBladeWarriors/Character/CompleteCharacters/Textures_Materials/CharM_Natural/MI_PlayerOutline.MI_PlayerOutline'");
+	OutlineMaterial = UMaterialInstanceDynamic::Create(lineMaterial, this);
+	OutlineMesh->SetMaterial(0, OutlineMaterial);
 }
 
 // Called when the game starts or when spawned
@@ -117,6 +144,14 @@ void ACPlayer::BeginPlay()
 
 	HealthWidget->UpdateMaxHealth(Status->GetMaxHealth());
 	HealthWidget->UpdateHealth(Status->GetHealth());
+
+	WeaponWidget = CreateWidget<UCUserWidget_Weapon, APlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0), WeaponWidgetClass);
+	WeaponWidget->AddToViewport();
+	WeaponWidget->Initialize();
+	WeaponWidget->SetVisibility(ESlateVisibility::Visible);
+
+	//SetTeamID
+	SetGenericTeamId(FGenericTeamId(TeamID));
 }
 
 // Called every frame
@@ -137,13 +172,14 @@ void ACPlayer::Tick(float DeltaTime)
 		}
 	}
 
+
 	//Draw Boomerang Route
 	else if (Action->IsBoomerangMode())
 	{
 		if (bClicked)
 		{
 			//TODO : 라인 그리기
-			FVector pointLocation = FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, GetActorLocation().Z);
+			FVector pointLocation = FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, GetActorLocation().Z - 20.0f);
 			Spline->UpdateSplineRoute(pointLocation);
 			Draw->DrawLine(pointLocation);
 		}
@@ -196,8 +232,6 @@ void ACPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAction("Action", IE_Pressed, this, &ACPlayer::OnAction);
 	PlayerInputComponent->BindAction("Action", IE_Released, this, &ACPlayer::OffAction);
-
-	PlayerInputComponent->BindAction("ChangeWeapon", IE_Pressed, this, &ACPlayer::OnChangeWeapon);
 }
 
 void ACPlayer::OnAction()
@@ -237,18 +271,6 @@ void ACPlayer::OffAction()
 	ClickTime = 0.0f;
 }
 
-void ACPlayer::OnChangeWeapon()
-{
-	if (Action->IsBoomerangMode())
-	{
-		Action->SetSwordMode();
-		return;
-	}
-	//TODO : 선택한 무기로 무기 전환
-	Action->SetBoomerangMode();
-	UGameplayStatics::GetPlayerController(GetWorld(), 0)->StopMovement();
-	Status->SetStop();
-}
 
 void ACPlayer::MoveToDestination()
 {
@@ -273,9 +295,9 @@ void ACPlayer::SetDestination()
 	playerController->GetHitResultUnderCursorForObjects(quries, true, HitResult);
 
 	float distance = FVector::Dist2D(GetActorLocation(), HitResult.ImpactPoint);
-	distance = FMath::Clamp(distance, 0.0f, 600.0f);
+	distance = FMath::Clamp(distance, 0.0f, SprintDistance);
 
-	GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(0.0f,600.0f,distance/600.0f);
+	GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(0.0f,Status->GetSprintSpeed(),distance/ SprintDistance);
 }
 
 void ACPlayer::TraceObject()
@@ -304,8 +326,37 @@ void ACPlayer::TraceObject()
 	);
 }
 
-void ACPlayer::DrawObjectLine()
+FGenericTeamId ACPlayer::GetGenericTeamId() const
 {
-
+	return FGenericTeamId(TeamID);
 }
 
+void ACPlayer::Dead()
+{
+}
+
+void ACPlayer::End_Dead()
+{
+}
+
+float ACPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float damage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	CLog::Print(damage);
+
+	return Status->GetHealth();
+}
+
+void ACPlayer::EnableHidden()
+{
+	bHideInZone = true;
+	OutlineMaterial->SetScalarParameterValue("Intensity", 2.0f);
+	OutlineMaterial->SetScalarParameterValue("Width", 10.0f);
+}
+
+void ACPlayer::DisableHidden()
+{
+	bHideInZone = false;
+	OutlineMaterial->SetScalarParameterValue("Intensity", 0.0f);
+	OutlineMaterial->SetScalarParameterValue("Width", 0.0f);
+}

@@ -55,13 +55,18 @@ void UCActionComponent::SetThrowingMode()
 void UCActionComponent::SetBoomerangMode()
 {
 	SetMode(EActionType::Boomerang);
-	
+}
+
+void UCActionComponent::SetWizardMode()
+{
+	SetMode(EActionType::Wizard);
 }
 
 void UCActionComponent::DoAction()
 {
 	if (IsUnarmedMode())
 	{
+
 		SetSwordMode();
 	}
 	//TODO : DoAction구현 후 Action실행
@@ -76,6 +81,41 @@ void UCActionComponent::DoAction()
 	}
 }
 
+void UCActionComponent::Dead()
+{
+	OffAllCollision();
+}
+
+void UCActionComponent::End_Dead()
+{
+	//TODO : 죽었을 때 플레이어와 적에 따라 다른 액션 구현
+}
+
+void UCActionComponent::AbortByDamage()
+{
+
+}
+
+void UCActionComponent::OffAllCollision()
+{
+	for (UCAction* data : Datas)
+	{
+		if (!!data == false)
+			continue;
+
+		for (ACAttachment* attachment : data->GetAttachments())
+		{
+			if (!!attachment == false) continue;
+		}
+
+		for (ACAttachment* attachment : data->GetAttachments())
+		{
+			attachment->OffCollision();
+		}
+	}
+}
+
+
 void UCActionComponent::SetMode(EActionType InType)
 {
 	if (Type == InType)
@@ -83,9 +123,13 @@ void UCActionComponent::SetMode(EActionType InType)
 		SetUnarmedMode();
 		return;
 	}
+	if (InType == EActionType::Boomerang && Datas[static_cast<int32>(InType)]->GetDoAction()->GetAction() == true)
+	{
+		return;
+	}
 	if (IsUnarmedMode() == false)
 	{
-		if (!!Datas[static_cast<int32>(Type)] && Type != EActionType::Boomerang)
+		if (!!Datas[static_cast<int32>(Type)] && Datas[static_cast<int32>(Type)]->GetDoAction()->GetAction() == false)
 			Datas[static_cast<int32>(Type)]->GetEquipment()->Unequip();
 	}
 
