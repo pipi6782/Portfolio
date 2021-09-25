@@ -30,10 +30,15 @@ private:
 public:
 	FORCEINLINE float GetBehaviorRange() { return BehaviorRange; }
 	FORCEINLINE float GetStrafeRange() { return StrafeRange; }
+	FORCEINLINE bool CanAttack() { return bAttack; }
 
+
+	void EnableAttack();
+	void DisableAttack();
 public:
 	ACAIController();
 
+	virtual void Tick(float DeltaTime) override;
 public:
 	float GetSightRadius();
 
@@ -48,6 +53,8 @@ private:
 		void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
 
 private:
+	bool bAttack = false;
+
 	class ACEnemy_AI* OwnerEnemy;
 	class ACEnemy_Boss* OwnerBoss;
 

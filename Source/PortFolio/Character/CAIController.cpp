@@ -13,6 +13,8 @@
 
 ACAIController::ACAIController()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	CHelpers::CreateActorComponent<UBlackboardComponent>(this, &Blackboard, "Blackboard");
 	CHelpers::CreateActorComponent<UCBehaviorComponent>(this, &Behavior, "Behavior");
 	CHelpers::CreateActorComponent<UAIPerceptionComponent>(this, &Perception, "Perception");
@@ -36,6 +38,11 @@ ACAIController::ACAIController()
 	Perception->ConfigureSense(*Hearing);
 	
 	Perception->SetDominantSense(UAISenseConfig_Sight::StaticClass());
+}
+
+void ACAIController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 }
 
 float ACAIController::GetSightRadius()
@@ -98,3 +105,12 @@ void ACAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
 	Blackboard->SetValueAsObject("Player", player);
 }
 
+void ACAIController::EnableAttack()
+{
+	bAttack = true;
+}
+
+void ACAIController::DisableAttack()
+{
+	bAttack = false;
+}

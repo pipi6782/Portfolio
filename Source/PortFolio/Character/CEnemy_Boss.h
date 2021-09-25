@@ -25,6 +25,8 @@ public:
 	FORCEINLINE class UBehaviorTree* GetBehaviorTree() { return BehaviorTree; }
 	FORCEINLINE uint8 GetTeamID() { return TeamID; }
 
+	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 public:
 	ACEnemy_Boss();
 	

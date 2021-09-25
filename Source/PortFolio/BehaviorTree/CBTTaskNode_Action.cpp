@@ -4,6 +4,7 @@
 #include "Character/CPlayer.h"
 #include "Character/CAIController.h"
 #include "Character/CEnemy_AI.h"
+#include "Character/CEnemy_Boss.h"
 #include "Components/CActionComponent.h"
 #include "Components/CStateComponent.h"
 #include "Components/CBehaviorComponent.h"
@@ -22,26 +23,52 @@ EBTNodeResult::Type UCBTTaskNode_Action::ExecuteTask(UBehaviorTreeComponent& Own
 	ACAIController* controller = Cast<ACAIController>(OwnerComp.GetOwner());
 	CheckNullResult(controller, EBTNodeResult::Failed);
 	ACEnemy_AI* enemy = Cast<ACEnemy_AI>(controller->GetPawn());
-	CheckNullResult(enemy, EBTNodeResult::Failed);
+	if (!!enemy)
+	{
+		//플레이어를 가져오기 위해 Behavior Component를 가져온 후 타켓으로 설정된 플레이어를 가져옴
+		UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
+		CheckNullResult(behavior, EBTNodeResult::Failed);
+		ACPlayer* player = behavior->GetTargetPlayer();
+		CheckNullResult(player, EBTNodeResult::Failed);
 
-	//플레이어를 가져오기 위해 Behavior Component를 가져온 후 타켓으로 설정된 플레이어를 가져옴
-	UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
-	CheckNullResult(behavior, EBTNodeResult::Failed);
-	ACPlayer* player = behavior->GetTargetPlayer();
-	CheckNullResult(player, EBTNodeResult::Failed);
+		//적의 이동을 멈추고 플레이어를 바라보게함
+		controller->StopMovement();
+		controller->SetFocus(player);
 
-	//적의 이동을 멈추고 플레이어를 바라보게함
-	controller->StopMovement();
-	controller->SetFocus(player);
+		//적에게서 Action Component를 가져온 후 널체크
+		UCActionComponent* action = CHelpers::GetComponent<UCActionComponent>(enemy);
+		CheckNullResult(action, EBTNodeResult::Failed);
 
-	//적에게서 Action Component를 가져온 후 널체크
-	UCActionComponent* action = CHelpers::GetComponent<UCActionComponent>(enemy);
-	CheckNullResult(action, EBTNodeResult::Failed);
+		RunningTime = 0.0f;
+		action->DoAction();
 
-	RunningTime = 0.0f;
-	action->DoAction();
+		return EBTNodeResult::InProgress;
+	}
+	else
+	{
+		ACEnemy_Boss* boss = Cast<ACEnemy_Boss>(controller->GetPawn());
 
-	return EBTNodeResult::InProgress;
+		CheckNullResult(boss, EBTNodeResult::Failed);
+
+		//플레이어를 가져오기 위해 Behavior Component를 가져온 후 타켓으로 설정된 플레이어를 가져옴
+		UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
+		CheckNullResult(behavior, EBTNodeResult::Failed);
+		ACPlayer* player = behavior->GetTargetPlayer();
+		CheckNullResult(player, EBTNodeResult::Failed);
+
+		//적의 이동을 멈추고 플레이어를 바라보게함
+		controller->StopMovement();
+		controller->SetFocus(player);
+
+		//적에게서 Action Component를 가져온 후 널체크
+		UCActionComponent* action = CHelpers::GetComponent<UCActionComponent>(boss);
+		CheckNullResult(action, EBTNodeResult::Failed);
+
+		RunningTime = 0.0f;
+		action->DoAction();
+
+		return EBTNodeResult::InProgress;
+	}
 }
 
 void UCBTTaskNode_Action::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
@@ -56,27 +83,56 @@ void UCBTTaskNode_Action::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* Nod
 		return;
 	}
 	ACEnemy_AI* enemy = Cast<ACEnemy_AI>(controller->GetPawn());
-	if (enemy == nullptr)
+	ACEnemy_Boss* boss = Cast<ACEnemy_Boss>(controller->GetPawn());
+	if (!!enemy)
 	{
-		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		//적에게서 State Component를 가져온 후 널체크
+		UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(enemy);
+		if (state == nullptr)
+		{
+			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+			return;
+		}
+
+		RunningTime += DeltaSeconds;
+
+		//공격이 끝나고 Idle Mode가 되고, 지정된 시간이상이 흘렀으면 해당 Task 종료
+		if (state->IsIdleMode() && RunningTime >= Delay)
+		{
+			controller->ClearFocus(EAIFocusPriority::Gameplay);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+			return;
+		}
+		return;
+	}
+	else
+	{
+		if (boss == nullptr)
+		{
+			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+			return;
+		}
+
+		//적에게서 State Component를 가져온 후 널체크
+		UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(boss);
+		if (state == nullptr)
+		{
+			controller->ClearFocus(EAIFocusPriority::Gameplay);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+			return;
+		}
+
+		RunningTime += DeltaSeconds;
+
+		//공격이 끝나고 Idle Mode가 되고, 지정된 시간이상이 흘렀으면 해당 Task 종료
+		if (state->IsIdleMode() && RunningTime >= Delay)
+		{
+			controller->ClearFocus(EAIFocusPriority::Gameplay);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+			return;
+		}
 		return;
 	}
 
-	//적에게서 State Component를 가져온 후 널체크
-	UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(enemy);
-	if (state == nullptr)
-	{
-		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
-		return;
-	}
-
-	RunningTime += DeltaSeconds;
-
-	//공격이 끝나고 Idle Mode가 되고, 지정된 시간이상이 흘렀으면 해당 Task 종료
-	if (state->IsIdleMode() && RunningTime >= Delay)
-	{
-		controller->ClearFocus(EAIFocusPriority::Gameplay);
-		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-		return;
-	}
+	
 }

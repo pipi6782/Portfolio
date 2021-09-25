@@ -21,10 +21,9 @@ void UCEnvQueryContext_StrafeRight::ProvideContext(FEnvQueryInstance& QueryInsta
 		FVector bossLocation = boss->GetActorLocation();
 		FVector playerLocation = player->GetActorLocation();
 		FRotator rotation = UKismetMathLibrary::FindLookAtRotation(bossLocation, playerLocation);
-		rotation = FRotator(rotation.Pitch, rotation.Yaw + 90.0f, rotation.Roll);
-		FVector forward = FQuat(rotation).GetForwardVector() * 300.0f;
+		FVector right = FQuat(rotation).GetRightVector() * 300.0f;
 
-		UEnvQueryItemType_Point::SetContextHelper(ContextData, bossLocation + forward);
+		UEnvQueryItemType_Point::SetContextHelper(ContextData, bossLocation + right);
 	}
 	else
 	{

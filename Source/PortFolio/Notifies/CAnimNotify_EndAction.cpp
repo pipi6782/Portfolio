@@ -1,8 +1,11 @@
 #include "CAnimNotify_EndAction.h"
 #include "Global.h"
+
 #include "Components/CActionComponent.h"
 #include "Action/CAction.h"
 #include "Action/CDoAction.h"
+#include "Character/CEnemy_Boss.h"
+#include "Character/CAIController.h"
 
 FString UCAnimNotify_EndAction::GetNotifyName_Implementation() const
 {

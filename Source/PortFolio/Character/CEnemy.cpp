@@ -3,13 +3,17 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
-#include "Components/WidgetComponent.h"
+#include "Character/CAIController.h"
 #include "Components/CStatusComponent.h"
 #include "Components/CMontageComponent.h"
 #include "Components/CActionComponent.h"
+#include "Components/CBehaviorComponent.h"
+#include "Action/CThrow.h"
 
 ACEnemy::ACEnemy()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	//Create ActorComponent
 	CHelpers::CreateActorComponent(this, &Status, "Status");
 	CHelpers::CreateActorComponent(this, &Montages, "Montages");
@@ -37,48 +41,73 @@ void ACEnemy::BeginPlay()
 	State->OnStateTypeChanged.AddDynamic(this, &ACEnemy::OnStateTypeChanged);
 }
 
-float ACEnemy::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+void ACEnemy::Tick(float DeltaTime)
 {
-	float damage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	Super::Tick(DeltaTime);
 
-	DamageInstigator = EventInstigator;
-
-
-
-	//대미지를 준 대상이 부메랑인지 체크
-	if (DamageCauser->GetName().Contains("Boomerang") || DamageCauser->GetName().Contains("Throw"))
+	if (bFollow == true)
 	{
-		Status->SubHealth(0.0f);
-	}
-	else
-	{
-		//캐릭터가 적의 전방을 공격했는지 체크
-		float dotResult = GetDotProductTo(DamageInstigator->GetPawn());
-		if (dotResult <= 0.0f)
+		CheckNull(followAttachment);
+		FVector location = followAttachment->GetActorLocation();
+		location = FVector(location.X, location.Y, GetActorLocation().Z);
+		SetActorLocation(location);
+		ACAIController* controller = Cast<ACAIController>(GetController());
+		if (!!controller)
 		{
-			Status->SubHealth(0.0f);
-		}
-		else
-		{
-			Status->SubHealth(damage);
+			UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
+			if (!!behavior)
+			{
+				behavior->SetWaitMode();
+			}
 		}
 	}
-
-	if (Status->GetHealth() <= 0.0f)
-	{
-		State->SetDeadMode();
-		return 0.0f;
-	}
-	
-	State->SetDamagedMode();
-	CLog::Print(Status->GetHealth());
-	return Status->GetHealth();
 }
 
 void ACEnemy::End_Dead()
 {
 	Action->End_Dead();
 	//TODO : 해당 레벨 리셋작업 하기
+}
+
+void ACEnemy::DestroyMagicBallAndStopMontage()
+{
+	for (AActor* actor : Children)
+	{
+		ACThrow* throwObject = Cast<ACThrow>(actor);
+		if (!!throwObject)
+		{
+			throwObject->Destroy();
+			StopAnimMontage();
+			ACAIController* controller = Cast<ACAIController>(GetController());
+			if (!!controller)
+			{
+				controller->DisableAttack();
+				UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
+				if (!!behavior)
+				{
+					behavior->SetWaitMode();
+				}
+			}
+
+			break;
+		}
+	}
+}
+
+void ACEnemy::FollowBoomerang(AActor* InAttachment)
+{
+	CheckNull(InAttachment);
+	bFollow = true;
+	followAttachment = InAttachment;
+	CLog::Log("Attached To Boomerang");
+}
+
+void ACEnemy::UnfollowBoomerang()
+{
+	followAttachment = nullptr;
+	bFollow = false;
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CLog::Log("Detached To Boomerang");
 }
 
 void ACEnemy::OnStateTypeChanged(EStateType InPrevType, EStateType InNewType)

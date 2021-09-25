@@ -5,6 +5,7 @@
 
 #include "Components/CStateComponent.h"
 #include "Components/CStatusComponent.h"
+#include "Managers/CBossManager.h"
 
 ACAttachment::ACAttachment()
 {
@@ -26,6 +27,7 @@ void ACAttachment::BeginPlay()
 	}
 
 	OffCollision();
+
 
 	Super::BeginPlay();	
 }
@@ -49,7 +51,9 @@ void ACAttachment::OnCollision()
 void ACAttachment::OffCollision()
 {
 	for (auto component : ShapeComponents)
+	{
 		component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void ACAttachment::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

@@ -16,7 +16,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, VisibleDefaultsOnly)
 		class UCActionComponent* Action;
 
-private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCMontageComponent* Montages;
 
@@ -26,24 +25,31 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCStateComponent* State;
 	
-private:
+protected:
 	UFUNCTION()
 		void OnStateTypeChanged(EStateType InPrevType, EStateType InNewType);
 
-private:
 	void Damaged();
 	void Dead();
 
 public:
 	ACEnemy();
 
-	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
 	virtual void End_Dead() override;
+
+	void DestroyMagicBallAndStopMontage();
+
+	void FollowBoomerang(AActor* InAttachment);
+	void UnfollowBoomerang();
+
+	virtual void Tick(float DeltaTime) override;
 protected:
 	virtual void BeginPlay() override;
 
-private:
+protected:
 	class AController* DamageInstigator;
 
+	AActor* followAttachment;
+
+	bool bFollow = false;
 };

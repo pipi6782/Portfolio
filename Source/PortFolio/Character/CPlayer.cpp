@@ -8,6 +8,7 @@
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
+#include "CHUD.h"
 #include "CAnimInstance.h"
 #include "Components/CStatusComponent.h"
 #include "Components/CStateComponent.h"
@@ -152,6 +153,8 @@ void ACPlayer::BeginPlay()
 
 	//SetTeamID
 	SetGenericTeamId(FGenericTeamId(TeamID));
+	
+	Hud = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD<ACHUD>();
 }
 
 // Called every frame
@@ -178,10 +181,13 @@ void ACPlayer::Tick(float DeltaTime)
 	{
 		if (bClicked)
 		{
-			//TODO : 라인 그리기
 			FVector pointLocation = FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, GetActorLocation().Z - 20.0f);
 			Spline->UpdateSplineRoute(pointLocation);
-			Draw->DrawLine(pointLocation);
+			if (Hud->CanDraw() == false)
+			{
+				Hud->EnableDraw();
+			}
+			Draw->DrawLine();
 		}
 	}
 

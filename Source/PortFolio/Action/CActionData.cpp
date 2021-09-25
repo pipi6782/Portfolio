@@ -1,9 +1,11 @@
 #include "CActionData.h"
 #include "Global.h"
 #include "GameFramework/Character.h"
+
 #include "CAttachment.h"
 #include "CEquipment.h"
 #include "CDoAction.h"
+#include "Managers/CBossManager.h"
 
 void UCActionData::BeginPlay(class ACharacter* InOwnerCharacter, class UCAction** OutAction)
 {
@@ -65,7 +67,7 @@ void UCActionData::BeginPlay(class ACharacter* InOwnerCharacter, class UCAction*
 	{
 		(*OutAction)->Attachments.Add(Attachments[index]);
 	}
-		
+
 	(*OutAction)->Equipment = Equipment;
 	(*OutAction)->DoAction = DoAction;
 	(*OutAction)->EquipmentColor = EquipmentColor;

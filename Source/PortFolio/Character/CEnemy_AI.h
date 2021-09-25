@@ -29,4 +29,6 @@ public:
 
 public:
 	ACEnemy_AI();
+
+	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 };

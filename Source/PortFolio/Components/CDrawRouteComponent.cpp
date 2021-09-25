@@ -21,7 +21,7 @@ void UCDrawRouteComponent::BeginPlay()
 	}
 }
 
-void UCDrawRouteComponent::DrawLine(const FVector& InLocation)
+void UCDrawRouteComponent::DrawLine()
 {
-	Draw->Draw(InLocation);
+	Draw->Draw();
 }

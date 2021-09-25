@@ -9,10 +9,6 @@ class PORTFOLIO_API ACDrawLine : public AActor
 {
 	GENERATED_BODY()
 	
-protected:
-	UPROPERTY(EditDefaultsOnly)
-		class UParticleSystem* Particle;
-
 public:	
 	ACDrawLine();
 
@@ -23,11 +19,13 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	void Draw(const FVector& InLocation);
+	void Draw();
 
 	UFUNCTION()
-		void ResetParticles();
+		void ResetPoints();
 
 private:
 	TArray<class UParticleSystemComponent*> Particles;
+
+	class ACHUD* Hud;
 };

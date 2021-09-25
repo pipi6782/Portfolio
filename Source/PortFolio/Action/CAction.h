@@ -30,7 +30,7 @@ struct FDoActionData : public FEquipmentData
 
 public:
 	UPROPERTY(EditAnywhere)
-		float Power = 1.0f;
+		float Power = 5.0f;
 
 	UPROPERTY(EditAnywhere)
 		float HitStop;
@@ -39,10 +39,16 @@ public:
 		class UParticleSystem* Effect;
 
 	UPROPERTY(EditAnywhere)
-		FTransform transform;
+		FTransform EffectTransform;
 
 	UPROPERTY(EditAnywhere)
 		TSubclassOf<class UCameraShake> ShakeClass;
+
+	UPROPERTY(EditAnywhere)
+		TSubclassOf<class ACThrow> ThrowClass;
+
+	UPROPERTY(EditAnywhere)
+		FString CollisionName = "None";
 };
 
 

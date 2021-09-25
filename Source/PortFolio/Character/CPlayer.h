@@ -121,4 +121,6 @@ private:
 
 	class UMaterialInstanceDynamic* OutlineMaterial;
 	class AController* DamageInstigator;
+	
+	class ACHUD* Hud;
 };

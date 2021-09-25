@@ -2,8 +2,10 @@
 #include "Global.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 
 #include "Character/CEnemy.h"
+#include "Character/CEnemy_Boss.h"
 #include "Components/SplineComponent.h"
 #include "Components/CStateComponent.h"
 #include "Components/CStatusComponent.h"
@@ -16,6 +18,8 @@
 #include "CDrawLine.h"
 #include "Objects/CObject_Chest.h"
 #include "Objects/CObject_Heart.h"
+#include "Managers/CBossManager.h"
+#include "CHUD.h"
 
 
 ACDoAction_Boomerang::ACDoAction_Boomerang()
@@ -60,7 +64,18 @@ void ACDoAction_Boomerang::BeginPlay()
 		if (!!draw) break;
 	}
 
-	OnBoomerang_End.AddDynamic(draw, &ACDrawLine::ResetParticles);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACBossManager::StaticClass(), actors);
+	for (AActor* actor : actors)
+	{
+		bossManager = Cast<ACBossManager>(actor);
+		if (!!bossManager) break;
+	}
+	
+	OnBoomerang_End.AddDynamic(draw, &ACDrawLine::ResetPoints);
+	OnBoomerang_End.AddDynamic(bossManager, &ACBossManager::CheckBossOnBoomerangEnd);
+	OnBoomerang_End.AddDynamic(bossManager, &ACBossManager::Reset);
+
+	Hud = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD<ACHUD>();
 }
 
 void ACDoAction_Boomerang::DoAction()
@@ -79,10 +94,11 @@ void ACDoAction_Boomerang::Begin_DoAction()
 	boomerang->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
 	boomerang->SetActorLocation(OwnerCharacter->GetActorLocation());
 	float length = Spline->GetPath()->GetSpline()->GetSplineLength();
-	boomerang->SetActorRotation(FRotator(90, 0, 0));
 	boomerang->OnCollision();
 	Timeline.SetPlayRate(1000 / length);
 	Timeline.PlayFromStart();
+	CheckNull(Hud);
+	Hud->SetOnFlying();
 }
 
 void ACDoAction_Boomerang::End_DoAction()
@@ -117,37 +133,53 @@ void ACDoAction_Boomerang::OnAttachmentBeginOverlap(ACharacter* InAttacker, AAct
 
 	DamagedActors.Add(InOtherActor);
 
+	//부딪힌 대상이 상자면 부메랑 진행 끝냄
 	if (InOtherActor->IsA<ACObject_Chest>())
 	{
 		Abort();
 		return;
 	}
 
-
 	//HitStop
-	float hitStop = Datas[0].HitStop;
-	FTimerHandle WaitHandle;
-	if (FMath::IsNearlyZero(hitStop) == false)
-	{
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
-		GetWorld()->GetTimerManager().SetTimer
-		(
-			WaitHandle,
-			FTimerDelegate::CreateLambda([&]() //[&] 이곳에 들어오는 함수들은 전부 다 참조변수이다, 내부에서 수정 시 영향을 미침
-				{
-					UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
-				}),
-			hitStop * 2e-2f,
-			false
-		);
-	}
-
+	//float hitStop = Datas[0].HitStop;
+	//FTimerHandle WaitHandle;
+	//if (FMath::IsNearlyZero(hitStop) == false)
+	//{
+	//	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 2e-2f);
+	//	GetWorld()->GetTimerManager().SetTimer
+	//	(
+	//		WaitHandle,
+	//		FTimerDelegate::CreateLambda([&]() //[&] 이곳에 들어오는 함수들은 전부 다 참조변수이다, 내부에서 수정 시 영향을 미침
+	//			{
+	//				UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+	//			}),
+	//		hitStop * 2e-2f,
+	//		false
+	//	);
+	//}
+	
 	//SendDamage
 	FDamageEvent e;
 	InOtherActor->TakeDamage(Datas[0].Power, e, InAttacker->GetInstigatorController(), InAttackCauser);
 
-	if (!!Cast<ACEnemy>(InOtherActor))
-		Abort();
+	ACEnemy* enemy = Cast<ACEnemy>(InOtherActor);
+	if (!!enemy)
+	{
+		//부메랑으로 맞춘 상대가 보스라면
+		if (enemy->GetName().Contains("Boss") && Timeline.IsPlaying())
+		{
+			bossManager->AddBoss(Cast<ACEnemy_Boss>(enemy));
+			enemy->FollowBoomerang(boomerang);
+			enemy->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			enemy->DestroyMagicBallAndStopMontage();
+		}
+		//일반 던전의 적이라면
+		else
+		{
+			Hud->DisableDraw();
+			Abort();
+		}
+	}
 }
 
 void ACDoAction_Boomerang::OnAttachmentEndOverlap(ACharacter* InAttacker, AActor* InAttackCauser, AActor* InOtherActor)
@@ -211,5 +243,6 @@ void ACDoAction_Boomerang::ReturnToPlayer()
 	if (boomerang->GetDistanceTo(OwnerCharacter)<=75.0f)
 	{
 		Unequip_Boomerang();
+		UKismetSystemLibrary::K2_ClearTimer(this, "ReturnToPlayer");
 	}
 }

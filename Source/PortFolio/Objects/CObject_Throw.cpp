@@ -71,7 +71,6 @@ void ACObject_Throw::Begin_Interact(ACharacter* InCharacter)
 
 	//DoAction을 할 때 Detach를 시키기 위해서 플레이어를 오너로 설정한다.
 	SetOwner(InteractedCharacter);
-	CLog::Log(GetName()+ ", " + Destructible->GetOwner()->GetName());
 }
 
 void ACObject_Throw::OnThrown()
@@ -89,6 +88,7 @@ void ACObject_Throw::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* O
 	CheckTrue(OtherActor->GetName().Compare(GetName()) == 0);
 	CheckTrue(OtherActor->IsA<ACAttachment>());
 	CheckNull(GetOwner());
+	CheckTrue(bDamaged);
 
 	Destructible->ApplyDamage(1000.0f, Hit.ImpactPoint, FVector(0, 0, 1), 1.0f);
 
@@ -115,8 +115,6 @@ void ACObject_Throw::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* O
 
 		SpawnObject(Hit.ImpactPoint);
 	}
-
-
 }
 
 void ACObject_Throw::DetachActor()

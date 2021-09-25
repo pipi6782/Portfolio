@@ -33,7 +33,6 @@ void UCBTService_Boss::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 	if (state->IsDamagedMode())
 	{
 		behavior->SetDamagedMode();
-		
 		return;
 	}
 
@@ -45,7 +44,22 @@ void UCBTService_Boss::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 		behavior->SetWaitMode();
 		return;
 	}
+
+	CheckFalse(state->IsIdleMode());
+
+
 	//타겟이 있을때
+	//공격이 가능한 상태면 공격
+	
+	bool bCanAttack = controller->CanAttack();
+
+	if (bCanAttack)
+	{
+		controller->DisableAttack();
+		behavior->SetActionMode();
+		return;
+	}
+
 	//적과 플레이어간의 거리 계산
 	float distance = enemy->GetDistanceTo(target);
 

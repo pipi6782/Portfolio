@@ -30,7 +30,7 @@ void UCBTService_Strafe::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Node
 
 	UEnvQuery* query = nullptr;
 	GetStrafeQuery(controller, query);
-	CheckNull(query);
+	CheckNull(query); 
 
 	//타겟으로 잡은 플레이어를 가져오기위해 Behavior Component를 가져옴
 	UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
@@ -75,7 +75,7 @@ void UCBTService_Strafe::MoveToStrafePoint(TSharedPtr<FEnvQueryResult> result)
 {
 	//EQS결과가 실패면 함수 끝
 	CheckFalse(result->IsSuccsessful());
-	
+
 	//보스를 가져옴
 	ACEnemy_Boss* boss = Cast<ACEnemy_Boss>(result->Owner);
 	CheckNull(boss);
@@ -85,7 +85,10 @@ void UCBTService_Strafe::MoveToStrafePoint(TSharedPtr<FEnvQueryResult> result)
 	CheckNull(controller);
 
 	//EQS결과중 제일 첫번째 결과만 가져옴, (0,0,0)이 나오면 함수 종료
-	FVector resultLocation = result->GetItemAsLocation(0);
+	TArray<FVector> locations;
+	result->GetAllAsLocations(locations);
+	int32 index = UKismetMathLibrary::RandomInteger(locations.Num());
+	FVector resultLocation = locations[index];
 	CheckTrue(FMath::IsNearlyZero(FVector::Dist(resultLocation, FVector::ZeroVector)));
 	
 	//컨트롤러를 성공적으로 가져왔으니 보스를 해당 방향으로 이동

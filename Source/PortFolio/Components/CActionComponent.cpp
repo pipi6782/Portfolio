@@ -105,11 +105,8 @@ void UCActionComponent::OffAllCollision()
 
 		for (ACAttachment* attachment : data->GetAttachments())
 		{
-			if (!!attachment == false) continue;
-		}
-
-		for (ACAttachment* attachment : data->GetAttachments())
-		{
+			if (attachment == nullptr) continue;
+			auto aa = attachment;
 			attachment->OffCollision();
 		}
 	}

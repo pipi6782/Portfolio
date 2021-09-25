@@ -55,4 +55,8 @@ private:
 	FBoomerang_End OnBoomerang_End;
 
 	TArray<class AActor*> DamagedActors;
+
+	class ACBossManager* bossManager;
+
+	class ACHUD* Hud;
 };
