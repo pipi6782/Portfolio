@@ -3,9 +3,8 @@
 #include "CoreMinimal.h"
 #include "Objects/CObject.h"
 #include "Components/TimelineComponent.h"
+#include "CCustomStructs.h"
 #include "CObject_Chest.generated.h"
-
-
 
 UCLASS()
 class PORTFOLIO_API ACObject_Chest : public ACObject
@@ -33,7 +32,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-
 protected:
 	virtual void Begin_Interact(class ACharacter* InCharacter) override;
 
@@ -43,7 +41,16 @@ protected:
 	UFUNCTION()
 		void EndOpening();
 
+	void SpawnObject(FVector InLocation);
+
+	void GetRewardClass(TSubclassOf<ACObject_DropItem>* InClass);
+
+	void SortRewardDatas();
+
 private:
 	FTimeline Timeline;
 	UCurveFloat* Curve;
+
+	TArray<FRewardData*> RewardDatas;
+	UDataTable* Table;
 };

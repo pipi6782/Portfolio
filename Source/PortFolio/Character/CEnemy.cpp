@@ -9,6 +9,8 @@
 #include "Components/CActionComponent.h"
 #include "Components/CBehaviorComponent.h"
 #include "Action/CThrow.h"
+#include "Action/CAction.h"
+#include "Action/CDoAction_Wizard.h"
 
 ACEnemy::ACEnemy()
 {
@@ -66,32 +68,27 @@ void ACEnemy::Tick(float DeltaTime)
 void ACEnemy::End_Dead()
 {
 	Action->End_Dead();
-	//TODO : 해당 레벨 리셋작업 하기
+	
+	Destroy();
 }
 
 void ACEnemy::DestroyMagicBallAndStopMontage()
 {
-	for (AActor* actor : Children)
+	StopAnimMontage();
+	ACAIController* controller = Cast<ACAIController>(GetController());
+	if (!!controller)
 	{
-		ACThrow* throwObject = Cast<ACThrow>(actor);
-		if (!!throwObject)
+		controller->DisableAttack();
+		UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
+		if (!!behavior)
 		{
-			throwObject->Destroy();
-			StopAnimMontage();
-			ACAIController* controller = Cast<ACAIController>(GetController());
-			if (!!controller)
-			{
-				controller->DisableAttack();
-				UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(controller);
-				if (!!behavior)
-				{
-					behavior->SetWaitMode();
-				}
-			}
-
-			break;
+			behavior->SetWaitMode();
 		}
 	}
+	ACDoAction_Wizard* wizard = Cast<ACDoAction_Wizard>(Action->GetCurrent()->GetDoAction());
+	CheckNull(wizard);
+	wizard->OffParticle();
+	PrintLine();
 }
 
 void ACEnemy::FollowBoomerang(AActor* InAttachment)
@@ -99,7 +96,6 @@ void ACEnemy::FollowBoomerang(AActor* InAttachment)
 	CheckNull(InAttachment);
 	bFollow = true;
 	followAttachment = InAttachment;
-	CLog::Log("Attached To Boomerang");
 }
 
 void ACEnemy::UnfollowBoomerang()
@@ -107,7 +103,6 @@ void ACEnemy::UnfollowBoomerang()
 	followAttachment = nullptr;
 	bFollow = false;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	CLog::Log("Detached To Boomerang");
 }
 
 void ACEnemy::OnStateTypeChanged(EStateType InPrevType, EStateType InNewType)

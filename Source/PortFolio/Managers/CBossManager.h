@@ -15,13 +15,19 @@ private:
 	UPROPERTY(EditAnywhere)
 		float AttackTime = 20.0f;
 
+	UPROPERTY(EditAnywhere)
+		bool bPrintTime;
+
 public:	
 	ACBossManager();
 
 	UFUNCTION()
 		void Reset();
 
-	void SetBossAttackTimer();
+	UFUNCTION()
+		void OnBossAttackTimer();
+
+	void StartBossAttackTimer();
 
 	virtual void Tick(float DeltaTime) override;
 

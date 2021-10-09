@@ -1,46 +1,69 @@
 #include "CDrawLine.h"
 #include "Global.h"
 #include "Components/SplineComponent.h"
+
 #include "Particles/ParticleSystemComponent.h"
 #include "CHUD.h"
 
 ACDrawLine::ACDrawLine()
 {
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void ACDrawLine::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	
+	CheckTrue(Locations.Num() <= 1);
+	for (int32 i = 1; i < Locations.Num(); i++)
+	{
+		FVector start = Locations[i - 1];
+		FVector end = Locations[i];
+		GetWorld()->LineBatcher->DrawLine(start, end, bFly ? FlyColor : DrawColor, 0.0f, 5.0f, 0);
+	}
 }
 
 void ACDrawLine::BeginPlay()
 {
 	Super::BeginPlay();
-	Hud = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD<ACHUD>();
 }
 
 bool ACDrawLine::CheckLength(const FVector& InLocation)
 {
-	FVector location = Particles[Particles.Num() - 1]->GetComponentTransform().GetLocation();
-	float distance = FVector::Dist2D(location, InLocation);
-	if (distance >= 20.0f) return true;
-	else return false;
+	CheckTrueResult((Locations.Num() == 0), true);
+	FVector last = Locations[Locations.Num() - 1];
+	float distance = FVector::Distance(last, InLocation);
+	if (distance <= 10.0f) return false;
+	else return true;
+}
+
+void ACDrawLine::SetFlying()
+{
+	bFly = true;
 }
 
 void ACDrawLine::Draw()
 {
-	CheckNull(Hud);
-	float locationX, locationY;
-	bool b = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetMousePosition(locationX, locationY);
-	if (b == true)
-		Hud->AddPoint(locationX, locationY);
+	APlayerController* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	CheckNull(controller);
+	APawn* pawn = controller->GetPawn();
+
+	FHitResult hitResult;
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> quries;
+	quries.Add(EObjectTypeQuery::ObjectTypeQuery1);
+
+	controller->GetHitResultUnderCursorForObjects(quries, true, hitResult);
+
+	FVector location = FVector(hitResult.ImpactPoint.X, hitResult.ImpactPoint.Y, pawn->GetActorLocation().Z - 20.0f);
+
+	CheckFalse(CheckLength(location));
+	
+	Locations.Add(location);
 }
-
-
 
 void ACDrawLine::ResetPoints()
 {
-	CheckNull(Hud);
-	Hud->ClearPoints();
-	Hud->DisableDraw();
+	Locations.Empty();
+	bFly = false;
 }

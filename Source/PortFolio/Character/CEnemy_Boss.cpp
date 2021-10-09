@@ -16,6 +16,11 @@ float ACEnemy_Boss::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 
 	DamageInstigator = EventInstigator;
 
+	if (GetActorLabel().Contains("Final") == false)
+	{
+		return 0.0f;
+	}
+
 	if (DamageCauser->GetName().Contains("Boomerang"))
 	{
 		Status->SubHealth(0.0f);

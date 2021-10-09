@@ -7,6 +7,8 @@
 #include "Components/CStateComponent.h"
 #include "Interfaces/ICharacter.h"
 #include "GenericTeamAgentInterface.h"
+#include "Action/CActionData.h"
+#include "Components/CMontageComponent.h"
 #include "CPlayer.generated.h"
 
 UCLASS()
@@ -32,11 +34,6 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UStaticMeshComponent* Pitching;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Widget")
-		TSubclassOf<class UCUserWidget_Health> HealthWidgetClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Widget")
-		TSubclassOf<class UCUserWidget_Weapon> WeaponWidgetClass;
 
 private:
 	//ActorComponent
@@ -58,6 +55,9 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 		class UCDrawRouteComponent* Draw;
 
+	UPROPERTY(EditDefaultsOnly)
+		class UCInventoryComponent* Inventory;
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 		float SprintDistance = 300.0f;
@@ -65,9 +65,20 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		float ThrowDistance = 300.0f;
 
+private:
+	UPROPERTY(VisibleDefaultsOnly)
+		class UCUserWidget_Health* HealthWidget;
+
+	UPROPERTY(VisibleDefaultsOnly)
+		class UCUserWidget_Weapon* WeaponWidget;
+
+	UPROPERTY(VisibleDefaultsOnly)
+		class UCUserWidget_Inventory* InventoryWidget;
+
 public:
 	FORCEINLINE class UCStatusComponent* GetStatusComponent() { return Status; }
 	FORCEINLINE class UCUserWidget_Health* GetHealthWidget() { return HealthWidget; }
+	FORCEINLINE class UCUserWidget_Inventory* GetInventoryWidget() { return InventoryWidget; }
 	FORCEINLINE void ResetHitResult() { HitResult = FHitResult();}
 	FORCEINLINE bool IsHiding() { return bHideInZone; }
 
@@ -85,6 +96,8 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
+	void Damaged();
+
 	void Dead();
 	virtual void End_Dead() override;
 
@@ -93,34 +106,44 @@ public:
 	void EnableHidden();
 	void DisableHidden();
 
+	void PlayMontage(const FMontageData* InData);
+	void PlayMontage(const FDoActionData* InData);
+
+	UFUNCTION()
+		void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 private:
 	void OnAction();
 	void OffAction();
+
+	void OnInteract();
+
+	void OnInventory();
+
+	void OnMoveForward(float InAxis);
+	void OnMoveRight(float InAxis);
 	
-	void MoveToDestination();
 
-	void SetDestination();
+	//void MoveToDestination();
 
-	void TraceObject();
+	//void SetDestination();
 
+	void TraceObject(TArray<FHitResult>& OutHits);
+
+	UFUNCTION()
+		void OnStateTypeChanged(EStateType InPrevType, EStateType InNewType);
 private:
 	FHitResult HitResult;
-	TArray<FHitResult> OutHits;
 
-	bool bClicked = false;
 
-	UPROPERTY(VisibleDefaultsOnly)
-		class UCUserWidget_Health* HealthWidget;
-
-	UPROPERTY(VisibleDefaultsOnly)
-		class UCUserWidget_Weapon* WeaponWidget;
+	bool bClicked;
 
 	bool bHideInZone = false;
 
-	float ClickTime = 0.0f;
-
 	class UMaterialInstanceDynamic* OutlineMaterial;
 	class AController* DamageInstigator;
-	
-	class ACHUD* Hud;
+
+	TSubclassOf<class UCUserWidget_Health> HealthWidgetClass;
+	TSubclassOf<class UCUserWidget_Weapon> WeaponWidgetClass;
+	TSubclassOf<class UCUserWidget_Inventory> InventoryWidgetClass;
+
 };

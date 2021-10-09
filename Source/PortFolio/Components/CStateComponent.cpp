@@ -51,3 +51,7 @@ void UCStateComponent::ChangeType(EStateType InNewType)
 		OnStateTypeChanged.Broadcast(prevType, InNewType);
 }
 
+void UCStateComponent::SetAttachedMode()
+{
+	ChangeType(EStateType::Attached);
+}

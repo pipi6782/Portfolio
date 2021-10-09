@@ -18,12 +18,6 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 		FTransform HitEffectTransform;
 
-	UPROPERTY(EditDefaultsOnly)
-		FVector DesiredScale;
-
-	UPROPERTY(EditDefaultsOnly)
-		float DesiredTime;
-
 	UPROPERTY(VisibleDefaultsOnly)
 		class USphereComponent* Sphere;
 
@@ -40,10 +34,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:	
-	virtual void Tick(float DeltaTime) override;
-
-	void StartThrowing();
 private:
 	UFUNCTION()
 		void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

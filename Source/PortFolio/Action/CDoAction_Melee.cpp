@@ -2,23 +2,60 @@
 #include "Global.h"
 #include "GameFramework/Character.h"
 
+#include "Character/CPlayer.h"
 #include "Components/CStateComponent.h"
 #include "Components/CStatusComponent.h"
 
 void ACDoAction_Melee::DoAction()
 {
 	Super::DoAction();
+	CheckFalse(Datas.Num() > 0);
+
+	if (bEnable == true)
+	{
+		bExist = true;
+		bEnable = false;
+		return;
+	}
 
 	CheckFalse(State->IsIdleMode());
 	State->SetActionMode();
 
-	OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
+	CheckNull(Datas[0].AnimMontage);
+	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
+	if (!!player)
+	{
+		player->PlayMontage(&Datas[0]);
+	}
+	else
+	{
+		OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
+	}
 	Datas[0].bCanMove ? Status->SetMove() : Status->SetStop();
 }
 
 void ACDoAction_Melee::Begin_DoAction()
 {
 	Super::Begin_DoAction();
+
+	CheckFalse(bExist);
+
+	bExist = false;
+
+	OwnerCharacter->StopAnimMontage();
+
+	Index++;
+	Index = FMath::Clamp<int32>(Index, 0, Datas.Num() - 1);
+	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
+	if (!!player)
+	{
+		player->PlayMontage(&Datas[Index]);
+	}
+	else
+	{
+		OwnerCharacter->PlayAnimMontage(Datas[Index].AnimMontage, Datas[Index].PlayRate, Datas[Index].StartSection);
+	}
+	Datas[Index].bCanMove ? Status->SetMove() : Status->SetStop();
 }
 
 void ACDoAction_Melee::End_DoAction()
@@ -26,6 +63,7 @@ void ACDoAction_Melee::End_DoAction()
 	Super::End_DoAction();
 
 	OwnerCharacter->StopAnimMontage(Datas[0].AnimMontage);
+	Index = 0;
 
 	State->SetIdleMode();
 	Status->SetMove();
@@ -76,4 +114,14 @@ void ACDoAction_Melee::OnAttachmentEndOverlap(ACharacter* InAttacker, AActor* In
 	Super::OnAttachmentEndOverlap(InAttacker, InAttackCauser, InOtherActor);
 
 	DamagedActor.Empty();
+}
+
+void ACDoAction_Melee::EnableCombo()
+{
+	bEnable = true;
+}
+
+void ACDoAction_Melee::DisableCombo()
+{
+	bEnable = false;
 }

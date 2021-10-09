@@ -17,9 +17,12 @@ ACThrow::ACThrow()
 
 	CHelpers::CreateActorComponent<UProjectileMovementComponent>(this, &Projectile, "Projectile");
 
-	Projectile->InitialSpeed = 0.0f;
-	Projectile->MaxSpeed = 0.0f;
+	Sphere->SetRelativeScale3D(FVector(1.5f, 1.5f, 1.5f));
+
+	Projectile->InitialSpeed = 2000.0f;
+	Projectile->MaxSpeed = 2000.0f;
 	Projectile->ProjectileGravityScale = 0.0f;
+	Projectile->bRotationFollowsVelocity = true;
 
 	InitialLifeSpan = 10.0f;
 }
@@ -31,23 +34,9 @@ void ACThrow::BeginPlay()
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &ACThrow::OnComponentBeginOverlap);
 }
 
-void ACThrow::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	FVector scale = Sphere->GetRelativeScale3D();
-	scale = UKismetMathLibrary::VInterpTo(scale, DesiredScale, DeltaTime,1/DesiredTime);
-
-	Sphere->SetRelativeScale3D(scale);
-
-	UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + GetActorForwardVector() * 200, FLinearColor::Black);
-}
-
 void ACThrow::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	CheckTrue(OtherActor == GetOwner());
-	CheckTrue(OtherActor->GetClass() == GetClass());
-	CheckTrue(OtherActor->GetClass() == GetOwner()->GetClass());
+	CheckFalse(OtherActor->IsA<ACPlayer>());
 	if (!HitEffect)
 	{
 		FTransform transform = HitEffectTransform;
@@ -57,22 +46,9 @@ void ACThrow::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, 
 	}
 
 	if (OnThrowBeginOverlap.IsBound())
+	{
 		OnThrowBeginOverlap.Broadcast(SweepResult);
+	}
 
 	Destroy();
 }
-
-void ACThrow::StartThrowing()
-{
-	ACEnemy_Boss* boss = Cast<ACEnemy_Boss>(GetOwner());
-
-	DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld,true));
-	UCBehaviorComponent* behavior = CHelpers::GetComponent<UCBehaviorComponent>(boss->GetController());
-	if (!!behavior)
-	{
-		FRotator temp = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), behavior->GetTargetPlayer()->GetActorLocation());
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), behavior->GetTargetPlayer()->GetActorLocation()));
-	}
-	Projectile->SetVelocityInLocalSpace(GetActorForwardVector() * 2000.0f);
-}
-

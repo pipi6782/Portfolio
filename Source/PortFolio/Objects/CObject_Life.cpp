@@ -43,7 +43,7 @@ ACObject_Life::ACObject_Life()
 	LifeMain->SetMaterial(0, material);
 
 	//Get Asset
-	CHelpers::GetAsset(&Curve, "CurveFloat'/Game/Objects/Curve_Life.Curve_Life'");
+	CHelpers::GetAsset(&Curve, "CurveFloat'/Game/Objects/Curve_ZeroToOne.Curve_ZeroToOne'");
 }
 
 void ACObject_Life::BeginPlay()

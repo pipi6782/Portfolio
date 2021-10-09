@@ -19,9 +19,11 @@ public:
 	ACObject();
 
 	virtual void Tick(float DeltaSeconds) override;
+
 protected:
 	UFUNCTION()
 		virtual void Begin_Interact(class ACharacter* InCharacter) {}
+
 protected:
 	virtual void BeginPlay() override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -30,6 +32,5 @@ public:
 
 protected:
 	class ACPlayer* InteractedCharacter;
-
 	bool bInteracted = false;
 };

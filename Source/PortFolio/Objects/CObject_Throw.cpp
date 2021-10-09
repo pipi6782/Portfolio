@@ -23,6 +23,7 @@ ACObject_Throw::ACObject_Throw()
 
 	Projectile->ProjectileGravityScale = 0.0f;
 
+	CHelpers::GetAsset(&Table, "DataTable'/Game/Datas/DT_Reward.DT_Reward'");
 }
 
 void ACObject_Throw::BeginPlay()
@@ -34,6 +35,33 @@ void ACObject_Throw::BeginPlay()
 	OnObjectThrown.AddDynamic(this, &ACObject_Throw::DetachActor);
 	OnObjectThrown.AddDynamic(this, &ACObject_Throw::OnThrown);
 	Destructible->OnComponentHit.AddDynamic(this, &ACObject_Throw::OnComponentHit);
+
+	TArray<FRewardData*> datas;
+	//데이터 테이블 에셋을 정상적으로 불러왔다면
+	if (!!Table)
+	{
+		Table->GetAllRows<FRewardData>("", datas);
+
+		for (int32 i = 0; i < datas.Num(); i++)
+		{
+			FRewardData* data;
+			RewardDatas.Add(data);
+		}
+		//Write Datas from Array
+		for (int32 i = 0; i < datas.Num(); i++)
+		{
+			for (FRewardData* data : datas)
+			{
+				if (datas[i]->RewardName == data->RewardName)
+				{
+					RewardDatas[i] = data;
+					continue;
+				}
+			}
+		}
+	}
+
+	SortRewardDatas();
 }
 
 void ACObject_Throw::Begin_Interact(ACharacter* InCharacter)
@@ -125,14 +153,46 @@ void ACObject_Throw::DetachActor()
 void ACObject_Throw::SpawnObject(FVector InLocation)
 {
 	FTransform transform;
-	transform.SetLocation(InLocation + FVector(0,0,25));
-	transform.SetScale3D(FVector(0.7f, 0.7f, 0.7f));
+	transform.SetLocation(InLocation);
 
-	GetWorld()->SpawnActor<ACObject_Heart>
-		(
-			ACObject_Heart::StaticClass(),
+	TSubclassOf<ACObject_DropItem> rewardClass;
+
+	GetRewardClass(&rewardClass);
+
+	CheckNull(rewardClass);
+
+	ACObject_DropItem* spawnObject =
+		GetWorld()->SpawnActorDeferred<ACObject_DropItem>(
+			rewardClass,
 			transform
 		);
+
+	spawnObject->SetDrop();
+
+	UGameplayStatics::FinishSpawningActor(spawnObject, transform);
+}
+
+void ACObject_Throw::GetRewardClass(TSubclassOf<ACObject_DropItem>* InClass)
+{
+	float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 1.0f);
+
+	for (auto data : RewardDatas)
+	{
+		if (percentage <= data->Percentage)
+		{
+			*InClass = data->ObjectClass;
+			return;
+		}
+	}
+}
+
+void ACObject_Throw::SortRewardDatas()
+{
+	RewardDatas.Sort([](const FRewardData& Data1,	const FRewardData& Data2)
+			{
+				return Data1.Percentage < Data2.Percentage;
+			}
+	);
 }
 
 float ACObject_Throw::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

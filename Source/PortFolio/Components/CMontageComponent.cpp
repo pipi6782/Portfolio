@@ -2,6 +2,8 @@
 #include "Global.h"
 #include "GameFramework/Character.h"
 
+#include "Character/CPlayer.h"
+
 UCMontageComponent::UCMontageComponent()
 {
 
@@ -39,8 +41,21 @@ void UCMontageComponent::PlayAnimMontage(EStateType InStateType)
 	FMontageData* data = Datas[static_cast<int32>(InStateType)];
 	if (!!data)
 	{
-		if (!!data->AnimMontage)
-			character->PlayAnimMontage(data->AnimMontage, data->PlayRatio, data->StartSection);
+		ACPlayer* player = Cast<ACPlayer>(character);
+		if (!!player)
+		{
+			if (!!data->AnimMontage)
+			{
+				player->PlayMontage(data);
+			}
+		}
+		else
+		{
+			if (!!data->AnimMontage)
+			{
+				character->PlayAnimMontage(data->AnimMontage, data->PlayRatio, data->StartSection);
+			}
+		}
 	}
 }
 

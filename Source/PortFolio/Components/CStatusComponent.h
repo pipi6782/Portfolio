@@ -54,6 +54,6 @@ protected:
 
 private:
 	float Health;
-	bool bCanMove = false;
+	bool bCanMove = true;
 	class ACPlayer* OwnerCharacter;
 };

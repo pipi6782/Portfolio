@@ -30,6 +30,8 @@ ACObject_Chest::ACObject_Chest()
 	Top->SetRelativeLocation(FVector(-45, 0, 0));
 	Bottom->SetRelativeLocation(FVector(-45, 0, 0));
 	CHelpers::GetAsset(&Curve, "CurveFloat'/Game/Objects/Curve_BoxPitch.Curve_BoxPitch'");
+
+	CHelpers::GetAsset(&Table, "DataTable'/Game/Datas/DT_Reward_Chest.DT_Reward_Chest'");
 }
 
 void ACObject_Chest::BeginPlay()
@@ -49,6 +51,33 @@ void ACObject_Chest::BeginPlay()
 	Timeline.SetPlayRate(OpeningSpeed);
 
 	OnObjectInteract.AddDynamic(this, &ACObject_Chest::Begin_Interact);
+
+	TArray<FRewardData*> datas;
+	//데이터 테이블 에셋을 정상적으로 불러왔다면
+	if (!!Table)
+	{
+		Table->GetAllRows<FRewardData>("", datas);
+
+		for (int32 i = 0; i < datas.Num(); i++)
+		{
+			FRewardData* data;
+			RewardDatas.Add(data);
+		}
+		//Write Datas from Array
+		for (int32 i = 0; i < datas.Num(); i++)
+		{
+			for (FRewardData* data : datas)
+			{
+				if (datas[i]->RewardName == data->RewardName)
+				{
+					RewardDatas[i] = data;
+					continue;
+				}
+			}
+		}
+	}
+
+	SortRewardDatas();
 }
 
 void ACObject_Chest::Tick(float DeltaSeconds)
@@ -72,12 +101,6 @@ void ACObject_Chest::Begin_Interact(class ACharacter* InCharacter)
 	UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(InteractedCharacter);
 	CheckNull(state);
 	state->SetInteractingMode();
-
-	//움직이지 못하게 하기 위해 Status Component를 가져온다.
-	//컴포넌트가 Null값이 아니면 움직이지 못하게 바꿔준다.
-	UCStatusComponent* status = CHelpers::GetComponent<UCStatusComponent>(InteractedCharacter);
-	CheckNull(status);
-	status->SetStop();
 
 	//캐릭터를 오브젝트 쪽으로 돌린다.
 	FVector characterVector = InteractedCharacter->GetActorLocation();
@@ -111,6 +134,53 @@ void ACObject_Chest::EndOpening()
 	CheckNull(state);
 	state->SetIdleMode();
 
-	//상자에서 오브젝트를 스폰시킨다.
-	GetWorld()->SpawnActor<ACObject_Life>(ACObject_Life::StaticClass(),GetActorLocation(),FRotator(0,0,0));
+
+	SpawnObject(GetActorLocation());
+}
+
+void ACObject_Chest::SpawnObject(FVector InLocation)
+{
+	FTransform transform;
+	transform.SetLocation(InLocation);
+
+	TSubclassOf<ACObject_DropItem> rewardClass;
+
+	GetRewardClass(&rewardClass);
+
+	CheckNull(rewardClass);
+
+	CLog::Log(rewardClass);
+
+	ACObject_DropItem* spawnObject =
+		GetWorld()->SpawnActorDeferred<ACObject_DropItem>(
+			rewardClass,
+			transform
+			);
+
+	spawnObject->SetDrop(false);
+
+	UGameplayStatics::FinishSpawningActor(spawnObject, transform);
+}
+
+void ACObject_Chest::GetRewardClass(TSubclassOf<ACObject_DropItem>* InClass)
+{
+	float percentage = UKismetMathLibrary::RandomFloatInRange(0.0f, 1.0f);
+
+	for (auto data : RewardDatas)
+	{
+		if (percentage <= data->Percentage)
+		{
+			*InClass = data->ObjectClass;
+			return;
+		}
+	}
+}
+
+void ACObject_Chest::SortRewardDatas()
+{
+	RewardDatas.Sort([](const FRewardData& Data1, const FRewardData& Data2)
+	{
+		return Data1.Percentage < Data2.Percentage;
+	}
+	);
 }

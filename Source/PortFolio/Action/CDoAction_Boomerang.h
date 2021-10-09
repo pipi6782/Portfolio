@@ -58,5 +58,5 @@ private:
 
 	class ACBossManager* bossManager;
 
-	class ACHUD* Hud;
+	class ACDrawLine* draw = nullptr;
 };

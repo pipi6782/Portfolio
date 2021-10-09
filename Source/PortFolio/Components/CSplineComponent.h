@@ -26,11 +26,14 @@ protected:
 
 public:
 	bool GetMoveTo(FVector& OutLocation);
-	void UpdateSplineRoute(const FVector& InLocation);
+
+	void DrawRoute();
 
 	void Reset();
 	void UpdateNextIndex(const FVector& InLocation);
 
+private:
+	void UpdateSplineRoute(const FVector& InLocation);
 private:
 	int32 index = 0;
 };

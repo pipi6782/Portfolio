@@ -15,6 +15,10 @@ class PORTFOLIO_API ACDoAction_Melee : public ACDoAction
 	GENERATED_BODY()
 	
 public:
+	void EnableCombo(); 
+	void DisableCombo();
+
+public:
 	void DoAction() override;
 	void Begin_DoAction() override;
 	void End_DoAction() override;
@@ -25,4 +29,6 @@ public:
 
 private:
 	TArray<class AActor*> DamagedActor;
+	bool bEnable, bExist;
+	int32 Index;
 };

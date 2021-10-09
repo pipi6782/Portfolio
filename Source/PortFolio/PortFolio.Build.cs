@@ -18,7 +18,8 @@ public class PortFolio : ModuleRules
 			"AIModule",
 			"ApexDestruction",
 			"GameplayTasks",
-			"UMG"
+			"UMG",
+			"SlateCore"
 		});
 		PublicIncludePaths.Add(ModuleDirectory);
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

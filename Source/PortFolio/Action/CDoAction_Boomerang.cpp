@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 
+#include "Character/CPlayer.h"
 #include "Character/CEnemy.h"
 #include "Character/CEnemy_Boss.h"
 #include "Components/SplineComponent.h"
@@ -51,10 +52,9 @@ void ACDoAction_Boomerang::BeginPlay()
 
 	FOnTimelineEvent finish;
 	finish.BindUFunction(this, "OnBoomerangEnd");
-
+	
 	Timeline.SetTimelineFinishedFunc(finish);
 
-	ACDrawLine* draw = nullptr;
 	TArray<AActor*> actors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDrawLine::StaticClass(), actors);
 
@@ -75,13 +75,17 @@ void ACDoAction_Boomerang::BeginPlay()
 	OnBoomerang_End.AddDynamic(bossManager, &ACBossManager::CheckBossOnBoomerangEnd);
 	OnBoomerang_End.AddDynamic(bossManager, &ACBossManager::Reset);
 
-	Hud = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetHUD<ACHUD>();
 }
 
 void ACDoAction_Boomerang::DoAction()
 {
 	CheckFalse(Datas.Num() > 0);
-	if (!!Datas[0].AnimMontage)
+	ACPlayer* player = Cast<ACPlayer>(OwnerCharacter);
+	if (!!player)
+	{
+		player->PlayMontage(&Datas[0]);
+	}
+	else
 	{
 		OwnerCharacter->PlayAnimMontage(Datas[0].AnimMontage, Datas[0].PlayRate, Datas[0].StartSection);
 	}
@@ -91,14 +95,15 @@ void ACDoAction_Boomerang::DoAction()
 void ACDoAction_Boomerang::Begin_DoAction()
 {
 	CheckNull(Spline);
+	draw->SetFlying();
 	boomerang->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
 	boomerang->SetActorLocation(OwnerCharacter->GetActorLocation());
 	float length = Spline->GetPath()->GetSpline()->GetSplineLength();
 	boomerang->OnCollision();
-	Timeline.SetPlayRate(1000 / length);
+	Timeline.SetPlayRate(1500 / length);
 	Timeline.PlayFromStart();
-	CheckNull(Hud);
-	Hud->SetOnFlying();
+	
+	
 }
 
 void ACDoAction_Boomerang::End_DoAction()
@@ -168,15 +173,19 @@ void ACDoAction_Boomerang::OnAttachmentBeginOverlap(ACharacter* InAttacker, AAct
 		//부메랑으로 맞춘 상대가 보스라면
 		if (enemy->GetName().Contains("Boss") && Timeline.IsPlaying())
 		{
+			CheckTrue(enemy->GetName().Contains("Final"));
 			bossManager->AddBoss(Cast<ACEnemy_Boss>(enemy));
 			enemy->FollowBoomerang(boomerang);
 			enemy->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			enemy->DestroyMagicBallAndStopMontage();
+			UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(enemy);
+			CheckNull(state);
+			state->SetAttachedMode();
 		}
 		//일반 던전의 적이라면
 		else
 		{
-			Hud->DisableDraw();
+			draw->ResetPoints();
 			Abort();
 		}
 	}

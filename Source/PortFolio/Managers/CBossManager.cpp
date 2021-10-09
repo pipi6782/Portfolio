@@ -8,7 +8,7 @@
 
 ACBossManager::ACBossManager()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	
 }
 
 void ACBossManager::BeginPlay()
@@ -24,28 +24,28 @@ void ACBossManager::BeginPlay()
 	}
 
 	CorrectBoss.Sort();
-
-	bEnableTick = true;
+	StartBossAttackTimer();
 }
 
 void ACBossManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	CheckFalse(bEnableTick);
-	RunningTime += DeltaTime;
-	CLog::Print(AttackTime - RunningTime, 0);
-	CLog::Print(Bosses.Num(), 1);
-	if (RunningTime >= AttackTime)
+	if (bPrintTime) CLog::Print(AttackTime - RunningTime, 1);
+	for (ACEnemy_Boss* boss : CorrectBoss)
 	{
-		for (ACEnemy_Boss* boss : CorrectBoss)
+		ACAIController* controller = Cast<ACAIController>(boss->GetController());
+		if (boss->GetName().Contains("First"))
 		{
-			ACAIController* controller = Cast<ACAIController>(boss->GetController());
-			if (!!controller)
-			{
-				controller->EnableAttack();
-			}
+			CLog::Print(controller->CanAttack() ? "First true" : "First false", 2);
 		}
-		RunningTime = 0.0f;
+		if (boss->GetName().Contains("Second"))
+		{
+			CLog::Print(controller->CanAttack() ? "Second true" : "Second false", 3);
+		}
+		if (boss->GetName().Contains("Third"))
+		{
+			CLog::Print(controller->CanAttack() ? "Third true" : "Third false", 4);
+		}
 	}
 }
 
@@ -58,15 +58,18 @@ void ACBossManager::AddBoss(ACEnemy_Boss* InBoss)
 
 void ACBossManager::CheckBossOnBoomerangEnd()
 {
-	CLog::Log("Check");
 	//보스가 셋다 뭉치고 맞는 순서면
 	if (IsBossOrderingCorrect())
 	{
 		//TODO : Final 보스로 바뀌게 함
+		Bosses[0]->UnfollowBoomerang();
+		for (int32 i = 1; i < Bosses.Num(); i++)
+		{
+			Bosses[i]->AttachToComponent(Bosses[0]->GetMesh(), FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		}
 	}
 	else
 	{
-		if (Bosses.Num() == 3) CLog::Print("Three");
 		for (int32 i = 0; i < Bosses.Num(); i++)
 		{
 			UCStateComponent* state = CHelpers::GetComponent<UCStateComponent>(Bosses[i]);
@@ -94,13 +97,25 @@ bool ACBossManager::IsBossOrderingCorrect()
 
 void ACBossManager::Reset()
 {
-	CLog::Log("Reset");
 	Bosses.Empty();
 }
 
-void ACBossManager::SetBossAttackTimer()
+void ACBossManager::OnBossAttackTimer()
+{
+	CLog::Print("Attack!!");
+	for (ACEnemy_Boss* boss : CorrectBoss)
+	{
+		ACAIController* controller = Cast<ACAIController>(boss->GetController());
+		if (!!controller)
+		{
+			controller->EnableAttack();
+		}
+	}
+}
+
+void ACBossManager::StartBossAttackTimer()
 {
 	//보스와 만나서 보스전이 시작됐을때만 사용
-	bEnableTick = true;
+	UKismetSystemLibrary::K2_SetTimer(this, "OnBossAttackTimer",AttackTime,true);
 }
 

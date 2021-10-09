@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Objects/CObject.h"
+#include "CCustomStructs.h"
 #include "CObject_Throw.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FObjectThrown);
@@ -41,6 +42,10 @@ protected:
 		void DetachActor();
 	
 	void SpawnObject(FVector InLocation);
+
+	void GetRewardClass(TSubclassOf<ACObject_DropItem>* InClass);
+
+	void SortRewardDatas();
 public:
 	//Purpose : 오브젝트를 던질때 실행할 함수들을 바인딩
 	// Call : ACDoAction_Throw::Begin_DoAction 호출시
@@ -49,4 +54,6 @@ public:
 
 private:
 	bool bDamaged = false;
+	TArray<FRewardData*> RewardDatas;
+	UDataTable* Table;
 };

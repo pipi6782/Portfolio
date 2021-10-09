@@ -26,7 +26,7 @@ float ACEnemy_AI::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACon
 	{
 		//캐릭터가 적의 전방을 공격했는지 체크
 		float dotResult = GetDotProductTo(DamageInstigator->GetPawn());
-		if (dotResult <= 0.0f)
+		if (dotResult >= 0.0f)
 		{
 			Status->SubHealth(0.0f);
 		}

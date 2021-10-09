@@ -1,6 +1,7 @@
 #include "CActionComponent.h"
 #include "Global.h"
 #include "GameFramework/Character.h"
+
 #include "Action/CActionData.h"
 #include "Action/CEquipment.h"
 #include "Action/CDoAction.h"
@@ -66,7 +67,6 @@ void UCActionComponent::DoAction()
 {
 	if (IsUnarmedMode())
 	{
-
 		SetSwordMode();
 	}
 	//TODO : DoAction구현 후 Action실행
@@ -89,6 +89,23 @@ void UCActionComponent::Dead()
 void UCActionComponent::End_Dead()
 {
 	//TODO : 죽었을 때 플레이어와 적에 따라 다른 액션 구현
+	for (int32 i = 0; i < (int32)EActionType::Max; i++)
+	{
+		if (!!Datas[i])
+		{
+			for (auto attachment : Datas[i]->GetAttachments())
+			{
+				if(!!attachment)
+					attachment->Destroy();
+			}
+		}
+
+		if (!!Datas[i] && !!Datas[i]->GetEquipment())
+			Datas[i]->GetEquipment()->Destroy();
+
+		if (!!Datas[i] && !!Datas[i]->GetDoAction())
+			Datas[i]->GetDoAction()->Destroy();
+	}
 }
 
 void UCActionComponent::AbortByDamage()
@@ -106,7 +123,6 @@ void UCActionComponent::OffAllCollision()
 		for (ACAttachment* attachment : data->GetAttachments())
 		{
 			if (attachment == nullptr) continue;
-			auto aa = attachment;
 			attachment->OffCollision();
 		}
 	}

@@ -1,0 +1,4 @@
+,RewardName,ObjectClass,Percentage
+1,Life,Blueprint'/Game/Objects/BP_CObject_Life.BP_CObject_Life_C',0.15
+2,Money,Blueprint'/Game/Objects/BP_CObject_Money.BP_CObject_Money_C',0.55
+3,None,,1

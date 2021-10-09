@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Objects/CObject.h"
+#include "Objects/CObject_DropItem.h"
 #include "Components/TimelineComponent.h"
 #include "CObject_Life.generated.h"
 
 UCLASS()
-class PORTFOLIO_API ACObject_Life : public ACObject
+class PORTFOLIO_API ACObject_Life : public ACObject_DropItem
 {
 	GENERATED_BODY()
 	
@@ -30,6 +30,8 @@ public:
 	ACObject_Life();
 
 	virtual void Tick(float DeltaSeconds) override;
+
+
 
 protected:
 	virtual void BeginPlay() override;

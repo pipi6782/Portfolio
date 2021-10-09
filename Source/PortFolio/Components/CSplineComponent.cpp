@@ -23,7 +23,6 @@ void UCSplineComponent::BeginPlay()
 		Path = Cast<ACSplinePath>(actor);
 		if (!!Path) break;
 	}
-
 }
 
 //움직일 위치를 구하는 함수
@@ -34,6 +33,23 @@ bool UCSplineComponent::GetMoveTo(FVector& OutLocation)
 	CheckTrueResult((index == Path->GetSpline()->GetNumberOfSplinePoints() - 1), false);
 	OutLocation = Path->GetSpline()->GetLocationAtSplinePoint(index, ESplineCoordinateSpace::World);
 	return true;
+}
+
+void UCSplineComponent::DrawRoute()
+{
+	APlayerController* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	APawn* pawn = controller->GetPawn();
+	CheckNull(controller);
+	
+	FHitResult hitResult;
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> quries;
+	quries.Add(EObjectTypeQuery::ObjectTypeQuery1);
+	
+	controller->GetHitResultUnderCursorForObjects(quries, true, hitResult);
+
+	FVector location = FVector(hitResult.ImpactPoint.X, hitResult.ImpactPoint.Y, pawn->GetActorLocation().Z - 20.0f);
+	UpdateSplineRoute(location);
 }
 
 //스플라인 포인트를 추가한다. 

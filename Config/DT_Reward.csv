@@ -1,0 +1,7 @@
+,RewardName,ObjectClass,Percentage
+1,Life,Blueprint'/Game/Objects/BP_CObject_Heart.BP_CObject_Heart_C',0.3
+2,Money,Blueprint'/Game/Objects/BP_CObject_Money.BP_CObject_Money_C',0.45
+3,RedPotion,Blueprint'/Game/Objects/BP_CObject_Potion_Red.BP_CObject_Potion_Red_C',0.55
+4,BluePotion,Blueprint'/Game/Objects/BP_CObject_Potion_Blue.BP_CObject_Potion_Blue_C',0.6
+5,YellowPotion,Blueprint'/Game/Objects/BP_CObject_Potion_Yellow.BP_CObject_Potion_Yellow_C',0.625
+6,None,,1
