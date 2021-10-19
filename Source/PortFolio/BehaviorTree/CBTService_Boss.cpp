@@ -29,6 +29,28 @@ void UCBTService_Boss::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 
 	CheckTrue(state->IsDeadMode());
 
+<<<<<<< HEAD
+	if (enemy->GetName().Contains("Final"))
+	{
+		if (controller->CanRunTree() == true)
+		{
+			if (bStartedSpawn == false)
+			{
+				UKismetSystemLibrary::K2_SetTimer(this, "StartSpawn", SpawnTime, true);
+				bStartedSpawn = true;
+				return;
+			}
+		}
+		if (bCanSpawn)
+		{
+			bCanSpawn = false;
+			behavior->SetSpawnMode();
+			return;
+		}
+	}
+
+=======
+>>>>>>> parent of 8268443 (UE_2021_10_18_Final)
 	//공격을 당했을때
 	if (state->IsDamagedMode())
 	{
@@ -76,4 +98,9 @@ void UCBTService_Boss::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 		behavior->SetApproachMode();
 		return;
 	}
+}
+
+void UCBTService_Boss::StartSpawn()
+{
+	bCanSpawn = true;
 }
